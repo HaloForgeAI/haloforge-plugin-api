@@ -1,0 +1,17 @@
+[package]
+name = "hf-plugin-api"
+version = "0.1.0"
+edition = "2021"
+description = "Plugin API for HaloForge — traits and types for building native HaloForge plugins"
+license = "MIT"
+repository = "https://github.com/AuroraPixel/haloforge-plugin-api"
+keywords = ["haloforge", "plugin", "gamedev", "tauri"]
+categories = ["development-tools", "game-development"]
+readme = "README.md"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
