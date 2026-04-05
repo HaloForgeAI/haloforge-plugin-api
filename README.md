@@ -11,20 +11,83 @@ This repository contains **both** the Rust crate and the JavaScript/TypeScript S
 
 | Package | Language | Registry | Install |
 |---------|----------|----------|---------|
-| `haloforge-plugin-api` | Rust | [crates.io](https://crates.io/crates/haloforge-plugin-api) | `cargo add haloforge-plugin-api` |
-| `@haloforge/plugin-sdk` | TypeScript | [npm](https://www.npmjs.com/package/@haloforge/plugin-sdk) | `npm i @haloforge/plugin-sdk` |
+| `haloforge-plugin-api` | Rust | [crates.io](https://crates.io/crates/haloforge-plugin-api) | `cargo add haloforge-plugin-api serde_json` |
+| `@haloforge/plugin-sdk` | TypeScript | [npm](https://www.npmjs.com/package/@haloforge/plugin-sdk) | `npm i @haloforge/plugin-sdk react react-dom @tauri-apps/api lucide-react` |
 
-## Quick Start (Rust Backend)
+## Start a Plugin
+
+### 1. Create the Rust backend
+
+```bash
+cargo new my-plugin --lib
+cd my-plugin
+cargo add haloforge-plugin-api serde_json
+```
+
+Then make sure your crate builds as a dynamic library:
 
 ```toml
 # Cargo.toml
 [lib]
 crate-type = ["cdylib"]
-
-[dependencies]
-haloforge-plugin-api = "0.1"
-serde_json = "1"
 ```
+
+### 2. Create the frontend bundle
+
+You can use any React-compatible bundler. A minimal setup looks like this:
+
+```bash
+mkdir frontend
+cd frontend
+npm init -y
+npm i @haloforge/plugin-sdk react react-dom @tauri-apps/api lucide-react
+npm i -D typescript @types/react @types/react-dom
+```
+
+Build your frontend into the file referenced by `manifest.json` under `entry.frontend`.
+
+### 3. Add a manifest.json
+
+Every plugin ships with a `manifest.json` that declares compatibility, capabilities, entry points, and permissions.
+
+```json
+{
+    "id": "com.example.hello-plugin",
+    "name": "Hello Plugin",
+    "version": "0.1.0",
+    "description": "My first HaloForge plugin",
+    "author": "You",
+    "homepage": "https://github.com/you/hello-plugin",
+    "compatibility": {
+        "min_app_version": "0.1.0"
+    },
+    "capability_levels": [2],
+    "integration": {
+        "level2": {
+            "slots": ["devkit.toolbar"]
+        }
+    },
+    "entry": {
+        "native": {
+            "windows_x64": "native/hello_plugin.dll",
+            "macos_arm64": "native/libhello_plugin.dylib",
+            "linux_x64": "native/libhello_plugin.so"
+        },
+        "frontend": "frontend/dist/index.js"
+    },
+    "permissions": [
+        { "type": "ipc_register" }
+    ],
+    "commands": [
+        {
+            "id": "hello",
+            "description": "Return a greeting"
+        }
+    ]
+}
+```
+
+### 4. Implement the native backend
 
 ```rust
 use haloforge_plugin_api::*;
@@ -67,29 +130,54 @@ impl HaloForgePlugin for MyPlugin {
 declare_plugin!(MyPlugin, MyPlugin::new);
 ```
 
-## Quick Start (Frontend)
+### 5. Implement the frontend entry
 
 ```tsx
-import { definePlugin, registerPlugin, invokePlugin } from "@haloforge/plugin-sdk";
+import { definePlugin, invokePlugin } from "@haloforge/plugin-sdk";
 
-const plugin = definePlugin({
-  id: "com.example.my-plugin",
-  slots: {
-    "devkit.toolbar": () => <button onClick={handleClick}>Greet</button>,
-  },
-});
+function HelloButton() {
+    async function handleClick() {
+        const result = await invokePlugin<{ message: string }>("hello", { name: "HaloForge" });
+        alert(result.message);
+    }
 
-async function handleClick() {
-  const result = await invokePlugin<{ message: string }>("hello", { name: "HaloForge" });
-  alert(result.message);
+    return <button onClick={() => void handleClick()}>Greet</button>;
 }
 
-registerPlugin(plugin);
+export default definePlugin({
+  slots: {
+        "devkit.toolbar": HelloButton,
+  },
+});
+```
+
+When HaloForge loads the bundle, it injects the runtime plugin context needed by `invokePlugin`, hooks, slot context, and theme helpers.
+
+## Recommended Layout
+
+```text
+my-plugin/
+    Cargo.toml
+    manifest.json
+    src/
+        lib.rs
+    frontend/
+        package.json
+        src/
+            index.tsx
 ```
 
 ## Plugin Manifest
 
-Every plugin needs a `manifest.json`. See the [HaloForge organization](https://github.com/HaloForgeAI) for examples.
+The most important manifest fields are:
+
+- `capability_levels`: which HaloForge extension tiers your plugin uses.
+- `integration`: per-level configuration, like slot IDs or module metadata.
+- `entry.native`: the compiled Rust library paths for each platform you ship.
+- `entry.frontend`: the built JavaScript bundle HaloForge should load.
+- `permissions`: the host capabilities your plugin needs approved.
+
+See the [HaloForge organization](https://github.com/HaloForgeAI) for real plugin examples.
 
 ## Capability Levels
 
