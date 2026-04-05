@@ -1,0 +1,42 @@
+{
+  "name": "@haloforge/plugin-pack",
+  "version": "0.1.0",
+  "description": "HaloForge plugin packager CLI — validate, build, and bundle plugins into .hfpkg archives",
+  "type": "module",
+  "bin": {
+    "hf-pack": "./dist/cli.js"
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HaloForgeAI/haloforge-plugin-api.git",
+    "directory": "pack"
+  },
+  "homepage": "https://github.com/HaloForgeAI",
+  "bugs": {
+    "url": "https://github.com/HaloForgeAI/haloforge-plugin-api/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": ["haloforge", "plugin", "pack", "cli", "hfpkg"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/node": "^22.15.3",
+    "tsx": "^4.19.4",
+    "typescript": "~5.8.3"
+  }
+}

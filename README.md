@@ -13,6 +13,7 @@ This repository contains **both** the Rust crate and the JavaScript/TypeScript S
 |---------|----------|----------|---------|
 | `haloforge-plugin-api` | Rust | [crates.io](https://crates.io/crates/haloforge-plugin-api) | `cargo add haloforge-plugin-api serde_json` |
 | `@haloforge/plugin-sdk` | TypeScript | [npm](https://www.npmjs.com/package/@haloforge/plugin-sdk) | `npm i @haloforge/plugin-sdk react react-dom @tauri-apps/api lucide-react` |
+| `@haloforge/plugin-pack` | CLI | npm | `npx @haloforge/plugin-pack check .` |
 
 ## Start a Plugin
 
@@ -153,6 +154,15 @@ export default definePlugin({
 
 When HaloForge loads the bundle, it injects the runtime plugin context needed by `invokePlugin`, hooks, slot context, and theme helpers.
 
+### 6. Validate and package the plugin
+
+```bash
+npx @haloforge/plugin-pack check .
+npx @haloforge/plugin-pack pack . --release
+```
+
+The packer validates `manifest.json`, builds the Rust backend, builds the frontend bundle, collects optional `assets/` and `LICENSE`, then writes a `.hfpkg` archive into `dist/`.
+
 ## Recommended Layout
 
 ```text
@@ -178,6 +188,23 @@ The most important manifest fields are:
 - `permissions`: the host capabilities your plugin needs approved.
 
 See the [HaloForge organization](https://github.com/HaloForgeAI) for real plugin examples.
+
+## CLI Packager
+
+`@haloforge/plugin-pack` is the public packager for HaloForge plugins.
+
+- `hf-pack check <plugin-dir>` validates `manifest.json`.
+- `hf-pack info <plugin-dir-or-.hfpkg>` prints plugin metadata.
+- `hf-pack pack <plugin-dir>` builds and assembles a distributable `.hfpkg` archive.
+
+The CLI supports these plugin layouts:
+
+- `manifest.json` at the plugin root.
+- Rust backend in `backend/Cargo.toml`, `native/Cargo.toml`, `rust/Cargo.toml`, or root `Cargo.toml`.
+- Frontend app in `frontend/package.json`, `ui/package.json`, `web/package.json`, `app/package.json`, or root `package.json`.
+- Optional `assets/`, `native/`, and `LICENSE` files in the plugin root.
+
+It also supports common build-output layouts where the manifest points to packaged paths like `frontend/index.js`, while the actual frontend build emits files under `frontend/dist/` or `frontend/build/`.
 
 ## Capability Levels
 

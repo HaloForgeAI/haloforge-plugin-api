@@ -1,4 +1,6 @@
 /target
 /sdk/node_modules
 /sdk/dist
+/pack/node_modules
+/pack/dist
 Cargo.lock
