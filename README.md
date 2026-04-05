@@ -1,14 +1,17 @@
 # HaloForge Plugin API
 
-Build native plugins for [HaloForge](https://github.com/AuroraPixel/HaloForge) — the Game Dev Team Workbench & AI Assistant.
+Build native plugins for [HaloForge](https://github.com/HaloForgeAI) — the Game Dev Team Workbench & AI Assistant.
 
 This repository contains **both** the Rust crate and the JavaScript/TypeScript SDK that plugin authors need.
+
+- SDK repository: https://github.com/HaloForgeAI/haloforge-plugin-api
+- HaloForge homepage: https://github.com/HaloForgeAI
 
 ## Packages
 
 | Package | Language | Registry | Install |
 |---------|----------|----------|---------|
-| `hf-plugin-api` | Rust | [crates.io](https://crates.io/crates/hf-plugin-api) | `cargo add hf-plugin-api` |
+| `haloforge-plugin-api` | Rust | [crates.io](https://crates.io/crates/haloforge-plugin-api) | `cargo add haloforge-plugin-api` |
 | `@haloforge/plugin-sdk` | TypeScript | [npm](https://www.npmjs.com/package/@haloforge/plugin-sdk) | `npm i @haloforge/plugin-sdk` |
 
 ## Quick Start (Rust Backend)
@@ -19,12 +22,12 @@ This repository contains **both** the Rust crate and the JavaScript/TypeScript S
 crate-type = ["cdylib"]
 
 [dependencies]
-hf-plugin-api = "0.1"
+haloforge-plugin-api = "0.1"
 serde_json = "1"
 ```
 
 ```rust
-use hf_plugin_api::*;
+use haloforge_plugin_api::*;
 
 pub struct MyPlugin;
 
@@ -86,7 +89,7 @@ registerPlugin(plugin);
 
 ## Plugin Manifest
 
-Every plugin needs a `manifest.json`. See the [built-in plugins](https://github.com/AuroraPixel/HaloForge/tree/master/plugins) for examples.
+Every plugin needs a `manifest.json`. See the [HaloForge organization](https://github.com/HaloForgeAI) for examples.
 
 ## Capability Levels
 

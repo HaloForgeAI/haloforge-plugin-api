@@ -1,4 +1,4 @@
 /target
-/js/node_modules
-/js/dist
+/sdk/node_modules
+/sdk/dist
 Cargo.lock

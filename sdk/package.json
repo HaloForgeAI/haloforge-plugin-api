@@ -12,7 +12,7 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch"
@@ -29,8 +29,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/AuroraPixel/haloforge-plugin-api",
-    "directory": "js"
+    "url": "git+https://github.com/HaloForgeAI/haloforge-plugin-api.git",
+    "directory": "sdk"
+  },
+  "homepage": "https://github.com/HaloForgeAI",
+  "bugs": {
+    "url": "https://github.com/HaloForgeAI/haloforge-plugin-api/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": ["haloforge", "plugin", "sdk", "tauri", "gamedev"],
   "license": "MIT"

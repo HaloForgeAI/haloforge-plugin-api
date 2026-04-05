@@ -1,10 +1,12 @@
 [package]
-name = "hf-plugin-api"
+name = "haloforge-plugin-api"
 version = "0.1.0"
 edition = "2021"
 description = "Plugin API for HaloForge — traits and types for building native HaloForge plugins"
 license = "MIT"
-repository = "https://github.com/AuroraPixel/haloforge-plugin-api"
+repository = "https://github.com/HaloForgeAI/haloforge-plugin-api"
+homepage = "https://github.com/HaloForgeAI"
+documentation = "https://docs.rs/haloforge-plugin-api"
 keywords = ["haloforge", "plugin", "gamedev", "tauri"]
 categories = ["development-tools", "game-development"]
 readme = "README.md"
