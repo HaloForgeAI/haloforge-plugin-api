@@ -1,5 +1,6 @@
 import type React from "react";
 import type { PluginDefinition, FeaturePluginOptions, ModulePluginOptions, AssistantPluginOptions } from "./types";
+import { _setPluginId } from "./ipc";
 
 // ─── Global plugin component registry ────────────────────────────────────────
 // The host app exposes window.__hf_plugin_registry.
@@ -73,6 +74,7 @@ export function defineAssistantPlugin(options: AssistantPluginOptions): PluginDe
  * Called automatically when the plugin bundle is imported.
  */
 export function registerPlugin(pluginId: string, definition: PluginDefinition): void {
+  _setPluginId(pluginId);
   if (typeof window !== "undefined" && window.__hf_plugin_registry) {
     window.__hf_plugin_registry.register(pluginId, definition);
   }
