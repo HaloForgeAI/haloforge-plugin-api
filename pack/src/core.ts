@@ -1,6 +1,7 @@
 import AdmZip from "adm-zip";
 import chalk from "chalk";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import {
   copyFile,
@@ -25,6 +26,9 @@ export interface Manifest {
   version: string;
   description: string;
   author: string;
+  homepage?: string;
+  license?: string;
+  keywords?: string[];
   compatibility: {
     min_app_version: string;
     max_app_version?: string;
@@ -70,6 +74,27 @@ export interface PackOptions {
   noBackend?: boolean;
   noFrontend?: boolean;
   target?: string;
+}
+
+export interface MetadataOptions {
+  artifactUrl?: string;
+  source?: string;
+  slug?: string;
+  homepageUrl?: string;
+  repositoryUrl?: string;
+  signingKeyId?: string;
+  signingKeyBase64?: string;
+  signingKeyEnv?: string;
+  signature?: string;
+  signatureAlgorithm?: string;
+  output?: string;
+  pretty?: boolean;
+}
+
+export interface SubmitOptions {
+  apiBaseUrl?: string;
+  token?: string;
+  tokenEnv?: string;
 }
 
 export async function checkPlugin(pluginDirPath: string): Promise<void> {
@@ -133,12 +158,112 @@ export async function packPlugin(pluginDirPath: string, options: PackOptions): P
     const packagePath = path.join(outDir, `${manifest.id}-${manifest.version}.hfpkg`);
     const fileCount = await createArchive(stageDir, packagePath);
     const packageStats = await stat(packagePath);
+    const digest = await sha256File(packagePath);
+    const shaPath = `${packagePath}.sha256`;
+    await writeFile(shaPath, `${digest}  ${path.basename(packagePath)}\n`, "utf8");
 
     console.log(`\n${chalk.green.bold("Created")} ${packagePath}`);
     console.log(`  ${fileCount} files  ${chalk.cyan(formatSize(packageStats.size))}`);
+    console.log(`  sha256        ${chalk.yellow(digest)}`);
+    console.log(`  sha file      ${shaPath}`);
   } finally {
     await rm(stageDir, { recursive: true, force: true });
   }
+}
+
+export async function metadataTarget(targetPath: string, options: MetadataOptions): Promise<void> {
+  const resolvedPath = await realpath(targetPath);
+  if (path.extname(resolvedPath).toLowerCase() !== ".hfpkg") {
+    throw new Error("metadata expects a .hfpkg path");
+  }
+
+  const archive = new AdmZip(resolvedPath);
+  const entry = archive.getEntry("manifest.json");
+  if (!entry) {
+    throw new Error("manifest.json not found in archive");
+  }
+
+  const rawValue = JSON.parse(entry.getData().toString("utf8")) as unknown;
+  const manifest = parseManifest(rawValue, "archive manifest.json");
+  const raw = rawValue as JsonObject;
+  const stats = await stat(resolvedPath);
+  const sha256 = await sha256File(resolvedPath);
+  const signingKey = resolveSigningKey(options);
+
+  if (signingKey && !options.signingKeyId) {
+    throw new Error("signingKeyId is required when a signing key is provided");
+  }
+
+  const signature = options.signature?.trim() || undefined;
+  if (signingKey && !signature) {
+    throw new Error("signing packaged metadata is not supported by this npm packer yet; pass --signature or omit signing key options");
+  }
+
+  const payload = {
+    schema_version: 1,
+    kind: "plugin",
+    item: {
+      id: manifest.id,
+      slug: options.slug?.trim() || slugify(manifest.id),
+      kind: "plugin",
+      name: manifest.name,
+      summary: manifest.description,
+      source: options.source ?? "official",
+      homepage_url: options.homepageUrl ?? manifest.homepage ?? options.repositoryUrl,
+      repository_url: options.repositoryUrl ?? manifest.homepage,
+      author: normalizeAuthor(manifest.author),
+      license: manifest.license,
+      tags: normalizeTags(manifest),
+    },
+    version: {
+      version: manifest.version,
+      min_app_version: manifest.compatibility.min_app_version,
+      max_app_version: manifest.compatibility.max_app_version,
+      artifact_url: options.artifactUrl,
+      artifact_size: stats.size,
+      sha256,
+      signature,
+      signature_algorithm: options.signingKeyId ? (options.signatureAlgorithm ?? "ed25519") : undefined,
+      signing_key_id: options.signingKeyId,
+      manifest: raw,
+    },
+  };
+
+  const json = options.pretty ? JSON.stringify(payload, null, 2) : JSON.stringify(payload);
+  if (options.output) {
+    await mkdir(path.dirname(path.resolve(options.output)), { recursive: true });
+    await writeFile(options.output, `${json}\n`, "utf8");
+    console.log(`${chalk.green.bold("Wrote")} ${options.output}`);
+  } else {
+    console.log(json);
+  }
+}
+
+export async function submitDraft(draftPath: string, options: SubmitOptions): Promise<void> {
+  const payloadText = await readFile(draftPath, "utf8");
+  const bearer = options.token?.trim() || process.env[options.tokenEnv ?? "HF_ADMIN_TOKEN"]?.trim();
+  if (!bearer) {
+    throw new Error(`admin token missing; pass --token or set ${options.tokenEnv ?? "HF_ADMIN_TOKEN"}`);
+  }
+
+  const apiBaseUrl = options.apiBaseUrl ?? "https://admin.haloforge.link";
+  const endpoint = `${apiBaseUrl.replace(/\/+$/, "")}/v1/admin/catalog/drafts`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${bearer}`,
+      "content-type": "application/json",
+    },
+    body: payloadText,
+  });
+  const body = await response.text();
+  if (!response.ok) {
+    throw new Error(`admin API returned ${response.status}: ${body}`);
+  }
+
+  console.log(chalk.green.bold("Submitted catalog draft successfully."));
+  console.log(`  endpoint      ${endpoint}`);
+  console.log(`  response      ${body}`);
 }
 
 async function loadManifest(pluginDirPath: string): Promise<LoadedManifest> {
@@ -322,10 +447,24 @@ async function stageFrontend(
     console.log(`  ${chalk.cyan("building")} frontend (${packageManager.name})`);
     await runCommand(packageManager.command, packageManager.installArgs, frontendDir);
     await runCommand(packageManager.command, packageManager.buildArgs, frontendDir);
+    const distDir = path.join(frontendDir, "dist");
+    if (await pathExists(distDir)) {
+      const frontendRoot = outputPaths[0] ? splitManifestPath(outputPaths[0])[0] : "frontend";
+      await copyPath(distDir, path.join(stageDir, frontendRoot));
+      console.log(`    ${chalk.green("copied")} frontend dist`);
+      return;
+    }
   } else if (!frontendDir) {
     console.log(`  ${chalk.dim("skip frontend build")} no package.json found`);
   } else {
     console.log(`  ${chalk.dim("skip frontend build")} using prebuilt frontend assets`);
+    const distDir = path.join(frontendDir, "dist");
+    if (await pathExists(distDir)) {
+      const frontendRoot = outputPaths[0] ? splitManifestPath(outputPaths[0])[0] : "frontend";
+      await copyPath(distDir, path.join(stageDir, frontendRoot));
+      console.log(`    ${chalk.green("copied")} prebuilt frontend dist`);
+      return;
+    }
   }
 
   const copyTargets = await deriveCopyTargets(pluginDir, stageDir, frontendDir, outputPaths);
@@ -464,6 +603,11 @@ async function createArchive(stageDir: string, outputPath: string): Promise<numb
 
   zip.writeZip(outputPath);
   return files.length;
+}
+
+async function sha256File(filePath: string): Promise<string> {
+  const data = await readFile(filePath);
+  return createHash("sha256").update(data).digest("hex");
 }
 
 async function collectFiles(rootDir: string): Promise<string[]> {
@@ -772,6 +916,39 @@ function stripSuffixPath(fullPath: string, suffixPath: string): string {
 
   const prefix = fullParts.slice(0, fullParts.length - suffixParts.length).join("/");
   return prefix || ".";
+}
+
+function resolveSigningKey(options: MetadataOptions): string | undefined {
+  const direct = options.signingKeyBase64?.trim();
+  if (direct) {
+    return direct;
+  }
+  const envName = options.signingKeyEnv ?? "HF_PLUGIN_SIGNING_PRIVATE_KEY";
+  return process.env[envName]?.trim() || undefined;
+}
+
+function normalizeAuthor(author: string): JsonObject {
+  return { name: author };
+}
+
+function normalizeTags(manifest: Manifest): string[] {
+  const tags = new Set<string>();
+  for (const keyword of manifest.keywords ?? []) {
+    const normalized = keyword.trim().toLowerCase();
+    if (normalized) tags.add(normalized);
+  }
+  for (const level of manifest.capability_levels) {
+    tags.add(`level-${String(level)}`);
+  }
+  return [...tags].sort();
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/^dev\.haloforge\./, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "plugin";
 }
 
 function requireString(value: unknown, fieldName: string): asserts value is string {
