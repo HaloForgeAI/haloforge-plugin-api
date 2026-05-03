@@ -4,7 +4,7 @@
   "description": "HaloForge plugin packager CLI — validate, build, and bundle plugins into .hfpkg archives",
   "type": "module",
   "bin": {
-    "hf-pack": "./dist/cli.js"
+    "hf-pack": "dist/cli.js"
   },
   "files": ["dist", "README.md"],
   "scripts": {
