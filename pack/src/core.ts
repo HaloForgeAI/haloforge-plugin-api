@@ -834,7 +834,13 @@ function patchManifestNative(rawManifest: JsonObject, triple: string, relativePa
 
   const entry = ensureObject(rawManifest, "entry");
   const native = ensureObject(entry, "native");
+  for (const key of Object.keys(native)) {
+    delete native[key];
+  }
   native[field] = relativePath;
+
+  const compatibility = ensureObject(rawManifest, "compatibility");
+  compatibility.platforms = [tripleToPlatformFamily(triple)];
 }
 
 function ensureObject(container: JsonObject, key: string): JsonObject {
@@ -1084,6 +1090,13 @@ function tripleToNativeField(triple: string): string | null {
   if (triple.includes("x86_64") && triple.includes("linux")) return "linux_x64";
   if (triple.includes("aarch64") && triple.includes("linux")) return "linux_arm64";
   return null;
+}
+
+function tripleToPlatformFamily(triple: string): string {
+  if (triple.includes("apple")) return "macos";
+  if (triple.includes("windows")) return "windows";
+  if (triple.includes("linux")) return "linux";
+  return "unknown";
 }
 
 function currentTriple(): string {

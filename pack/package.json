@@ -1,6 +1,6 @@
 {
   "name": "@haloforge/plugin-pack",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "HaloForge plugin packager CLI — validate, build, and bundle plugins into .hfpkg archives",
   "type": "module",
   "bin": {

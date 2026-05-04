@@ -66,3 +66,5 @@ The CLI also accepts these common variants:
 `hf-pack metadata` emits the JSON draft accepted by the HaloForge catalog admin API. It can now sign plugin metadata directly with `--signing-key-id` plus either `--signing-key-base64` or `--signing-key-env`.
 
 `hf-pack submit` accepts `HF_ADMIN_TOKEN`, and also falls back to `HF_SESSION_TOKEN` / `HF_SESSION` for local operator flows that already hold an `hfsess_...` token.
+
+When `hf-pack pack` builds a targeted native artifact, it rewrites the staged manifest so `entry.native` and `compatibility.platforms` only describe the actual packaged target instead of every source-declared platform.
