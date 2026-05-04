@@ -1,5 +1,6 @@
 import AdmZip from "adm-zip";
 import chalk from "chalk";
+import nacl from "tweetnacl";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
@@ -194,10 +195,16 @@ export async function metadataTarget(targetPath: string, options: MetadataOption
     throw new Error("signingKeyId is required when a signing key is provided");
   }
 
-  const signature = options.signature?.trim() || undefined;
-  if (signingKey && !signature) {
-    throw new Error("signing packaged metadata is not supported by this npm packer yet; pass --signature or omit signing key options");
-  }
+  const signature = options.signature?.trim() || (signingKey
+    ? signPluginMetadata(
+      manifest.id,
+      manifest.version,
+      manifest.compatibility.min_app_version,
+      sha256,
+      stats.size,
+      signingKey,
+    )
+    : undefined);
 
   const payload = {
     schema_version: 1,
@@ -241,9 +248,11 @@ export async function metadataTarget(targetPath: string, options: MetadataOption
 
 export async function submitDraft(draftPath: string, options: SubmitOptions): Promise<void> {
   const payloadText = await readFile(draftPath, "utf8");
-  const bearer = options.token?.trim() || process.env[options.tokenEnv ?? "HF_ADMIN_TOKEN"]?.trim();
+  const bearer = resolveSubmitToken(options);
   if (!bearer) {
-    throw new Error(`admin token missing; pass --token or set ${options.tokenEnv ?? "HF_ADMIN_TOKEN"}`);
+    throw new Error(
+      `admin token missing; pass --token, set ${options.tokenEnv ?? "HF_ADMIN_TOKEN"}, or export HF_SESSION_TOKEN/HF_SESSION with your hfsess_... session token`,
+    );
   }
 
   const apiBaseUrl = options.apiBaseUrl ?? "https://admin.haloforge.link";
@@ -925,6 +934,74 @@ function resolveSigningKey(options: MetadataOptions): string | undefined {
   }
   const envName = options.signingKeyEnv ?? "HF_PLUGIN_SIGNING_PRIVATE_KEY";
   return process.env[envName]?.trim() || undefined;
+}
+
+function resolveSubmitToken(options: SubmitOptions): string | undefined {
+  const direct = options.token?.trim();
+  if (direct) {
+    return direct;
+  }
+
+  const primaryEnv = options.tokenEnv ?? "HF_ADMIN_TOKEN";
+  const envCandidates = [primaryEnv];
+  if (primaryEnv !== "HF_ADMIN_TOKEN") {
+    envCandidates.push("HF_ADMIN_TOKEN");
+  }
+  envCandidates.push("HF_SESSION_TOKEN", "HF_SESSION");
+
+  for (const envName of envCandidates) {
+    const value = process.env[envName]?.trim();
+    if (value) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function signPluginMetadata(
+  catalogId: string,
+  version: string,
+  minAppVersion: string,
+  sha256: string,
+  artifactSize: number,
+  signingKeyBase64: string,
+): string {
+  const payload = canonicalSignaturePayload(catalogId, version, minAppVersion, sha256, artifactSize);
+  const signingKey = decodeSigningKey(signingKeyBase64);
+  const signature = nacl.sign.detached(payload, signingKey);
+  return Buffer.from(signature).toString("base64");
+}
+
+function canonicalSignaturePayload(
+  catalogId: string,
+  version: string,
+  minAppVersion: string,
+  sha256: string,
+  artifactSize: number,
+): Uint8Array {
+  return Buffer.from(JSON.stringify({
+    kind: "plugin",
+    id: catalogId,
+    version,
+    sha256,
+    artifact_size: artifactSize,
+    min_app_version: minAppVersion,
+  }), "utf8");
+}
+
+function decodeSigningKey(signingKeyBase64: string): Uint8Array {
+  const keyBytes = Buffer.from(signingKeyBase64.trim(), "base64");
+
+  if (keyBytes.length === 32) {
+    return nacl.sign.keyPair.fromSeed(new Uint8Array(keyBytes)).secretKey;
+  }
+
+  if (keyBytes.length === 64) {
+    return new Uint8Array(keyBytes);
+  }
+
+  throw new Error("signing key must decode to 32-byte seed or 64-byte keypair");
 }
 
 function normalizeAuthor(author: string): JsonObject {

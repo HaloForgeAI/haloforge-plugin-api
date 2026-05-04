@@ -10,6 +10,7 @@ Use it to validate a plugin directory, inspect an existing `.hfpkg`, and produce
 npx @haloforge/plugin-pack check .
 npx @haloforge/plugin-pack pack . --release
 npx @haloforge/plugin-pack metadata dist/dev.haloforge.git-1.1.0.hfpkg --pretty --output dist/catalog-draft.json
+npx @haloforge/plugin-pack metadata dist/dev.haloforge.git-1.1.0.hfpkg --signing-key-id haloforge-official-2026-05 --signing-key-env HF_PLUGIN_SIGNING_PRIVATE_KEY --pretty --output dist/catalog-draft.json
 ```
 
 ## Commands
@@ -18,7 +19,7 @@ npx @haloforge/plugin-pack metadata dist/dev.haloforge.git-1.1.0.hfpkg --pretty 
 hf-pack check <plugin-dir>
 hf-pack info <plugin-dir-or-.hfpkg>
 hf-pack pack <plugin-dir> [--out dist] [--release] [--no-backend] [--no-frontend] [--target <triple>]
-hf-pack metadata <path.hfpkg> [--artifact-url <url>] [--source official] [--output <path>] [--pretty]
+hf-pack metadata <path.hfpkg> [--artifact-url <url>] [--source official] [--signing-key-id <id>] [--signing-key-env HF_PLUGIN_SIGNING_PRIVATE_KEY] [--output <path>] [--pretty]
 hf-pack submit <catalog-draft.json> [--api-base-url https://admin.haloforge.link] [--token-env HF_ADMIN_TOKEN]
 ```
 
@@ -62,6 +63,6 @@ The CLI also accepts these common variants:
 
 ## Catalog Metadata
 
-`hf-pack metadata` emits the JSON draft accepted by the HaloForge catalog admin API. Use `hf-pack submit` with `HF_ADMIN_TOKEN` to upload it to `admin.haloforge.link`.
+`hf-pack metadata` emits the JSON draft accepted by the HaloForge catalog admin API. It can now sign plugin metadata directly with `--signing-key-id` plus either `--signing-key-base64` or `--signing-key-env`.
 
-Signing metadata is intentionally conservative in the npm packer: pass a precomputed `--signature` if you need signed metadata from this CLI version.
+`hf-pack submit` accepts `HF_ADMIN_TOKEN`, and also falls back to `HF_SESSION_TOKEN` / `HF_SESSION` for local operator flows that already hold an `hfsess_...` token.

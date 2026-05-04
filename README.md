@@ -159,6 +159,8 @@ When HaloForge loads the bundle, it injects the runtime plugin context needed by
 ```bash
 npx @haloforge/plugin-pack check .
 npx @haloforge/plugin-pack pack . --release
+npx @haloforge/plugin-pack metadata dist/dev.haloforge.example-0.1.0.hfpkg --signing-key-id haloforge-official-2026-05 --signing-key-env HF_PLUGIN_SIGNING_PRIVATE_KEY --pretty --output dist/catalog-draft.json
+npx @haloforge/plugin-pack submit dist/catalog-draft.json --token-env HF_ADMIN_TOKEN
 ```
 
 The packer validates `manifest.json`, builds the Rust backend, builds the frontend bundle, collects optional `assets/` and `LICENSE`, then writes a `.hfpkg` archive into `dist/`.
@@ -196,6 +198,8 @@ See the [HaloForge organization](https://github.com/HaloForgeAI) for real plugin
 - `hf-pack check <plugin-dir>` validates `manifest.json`.
 - `hf-pack info <plugin-dir-or-.hfpkg>` prints plugin metadata.
 - `hf-pack pack <plugin-dir>` builds and assembles a distributable `.hfpkg` archive.
+- `hf-pack metadata <path.hfpkg>` emits catalog draft JSON and can sign it directly for official plugin publishing.
+- `hf-pack submit <catalog-draft.json>` uploads that draft to `admin.haloforge.link`.
 
 The CLI supports these plugin layouts:
 
