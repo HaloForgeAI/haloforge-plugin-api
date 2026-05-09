@@ -43,6 +43,11 @@ pub struct PluginManifest {
     #[serde(default)]
     pub permissions: Vec<Permission>,
 
+    /// Declarative access to stable host-side capability groups.
+    /// These should match the host hooks used from `@haloforge/plugin-sdk`.
+    #[serde(default)]
+    pub host_capabilities: Vec<HostCapability>,
+
     /// JSON Schema for plugin settings (auto-rendered in Plugin Manager).
     #[serde(default)]
     pub settings_schema: Option<serde_json::Value>,
@@ -59,6 +64,8 @@ pub struct PluginManifest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompatibilitySpec {
     pub min_app_version: String,
+    #[serde(default)]
+    pub min_host_api_version: Option<String>,
     #[serde(default)]
     pub max_app_version: Option<String>,
     #[serde(default = "all_platforms")]
@@ -83,6 +90,32 @@ pub enum CapabilityLevel {
     AiAssistant = 3,
     /// Level 4 — Headless service / backend extension.
     Service = 4,
+}
+
+/// Stable, documented host capability groups for black-box-compatible plugins.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HostCapability {
+    Navigation,
+    AppState,
+    FileIntents,
+    #[serde(rename = "aichat")]
+    AiChat,
+    ThemeRead,
+    EventSubscribe,
+}
+
+impl HostCapability {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Navigation => "navigation",
+            Self::AppState => "app_state",
+            Self::FileIntents => "file_intents",
+            Self::AiChat => "aichat",
+            Self::ThemeRead => "theme_read",
+            Self::EventSubscribe => "event_subscribe",
+        }
+    }
 }
 
 impl From<u8> for CapabilityLevel {
@@ -253,4 +286,46 @@ pub struct CommandDeclaration {
     pub id: String,
     #[serde(default)]
     pub description: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{HostCapability, PluginManifest};
+
+    #[test]
+    fn manifest_supports_public_host_api_fields() {
+        let manifest: PluginManifest = serde_json::from_value(serde_json::json!({
+            "id": "dev.haloforge.example",
+            "name": "Example",
+            "version": "0.1.0",
+            "description": "Example plugin",
+            "author": "HaloForge Team",
+            "compatibility": {
+                "min_app_version": "0.1.0",
+                "min_host_api_version": "0.1.0",
+                "platforms": ["windows"]
+            },
+            "capability_levels": [2],
+            "host_capabilities": ["navigation", "aichat"],
+            "integration": {
+                "level2": { "slots": ["devkit.toolbar"] }
+            }
+        }))
+        .expect("manifest should deserialize");
+
+        assert_eq!(
+            manifest.compatibility.min_host_api_version.as_deref(),
+            Some("0.1.0")
+        );
+        assert_eq!(
+            manifest.host_capabilities,
+            vec![HostCapability::Navigation, HostCapability::AiChat]
+        );
+    }
+
+    #[test]
+    fn host_capability_names_are_stable() {
+        assert_eq!(HostCapability::FileIntents.as_str(), "file_intents");
+        assert_eq!(HostCapability::ThemeRead.as_str(), "theme_read");
+    }
 }

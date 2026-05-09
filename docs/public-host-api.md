@@ -1,0 +1,116 @@
+# Public Host API
+
+HaloForge plugins should be able to feel deeply integrated even when the host is treated as a black box.
+
+This repository now exposes a documented host-facing layer across all three deliverables:
+
+1. Rust crate: `haloforge-plugin-api`
+2. Frontend SDK: `@haloforge/plugin-sdk`
+3. Packaging / linting CLI: `@haloforge/plugin-pack`
+
+## Goal
+
+Plugin authors should depend on documented SDK APIs instead of:
+
+- reading `window.__HF_HOST` directly
+- polling private host stores
+- hard-coding internal host IPC command names
+
+## Manifest additions
+
+Plugins can now declare:
+
+```json
+{
+  "compatibility": {
+    "min_app_version": "0.1.0",
+    "min_host_api_version": "0.1.0"
+  },
+  "host_capabilities": [
+    "navigation",
+    "app_state",
+    "file_intents",
+    "aichat",
+    "theme_read",
+    "event_subscribe"
+  ]
+}
+```
+
+### Supported `host_capabilities`
+
+- `navigation`
+- `app_state`
+- `file_intents`
+- `aichat`
+- `theme_read`
+- `event_subscribe`
+
+These declarations are meant to describe which stable host features the plugin expects through the public SDK layer.
+
+## Rust crate
+
+The Rust crate now exports:
+
+- `HostCapability`
+- `PUBLIC_HOST_API_VERSION`
+
+The permission model also includes explicit host-facing permissions:
+
+- `host_navigation`
+- `host_file_intents`
+- `host_aichat_access`
+- `host_theme_read`
+- `host_event_subscribe`
+
+This keeps host integration auditable instead of hidden inside private bridge calls.
+
+## Frontend SDK
+
+Use the public SDK hooks:
+
+```tsx
+import {
+  registerPlugin,
+  definePlugin,
+  useHostNavigation,
+  useHostFileIntent,
+  useHostAI,
+  useHostTheme,
+} from "@haloforge/plugin-sdk";
+
+function ExamplePanel() {
+  const { openSettingsTab } = useHostNavigation();
+  const { intent, consume } = useHostFileIntent();
+  const { models, selectedModelId, sendMessage } = useHostAI();
+  const { theme } = useHostTheme();
+
+  return null;
+}
+
+export default registerPlugin("dev.haloforge.example", definePlugin({
+  panel: ExamplePanel,
+}));
+```
+
+### Public host hooks
+
+- `useHostAppState()`
+- `useHostNavigation()`
+- `useHostFileIntent()`
+- `useHostModels()`
+- `useAvailableModels()`
+- `useHostAI()`
+- `useHostTheme()`
+- `useHostEvent()`
+
+The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
+
+## `hf-pack` guidance
+
+`hf-pack check` and `hf-pack pack` now warn when plugin source code appears to rely on:
+
+- direct `__HF_HOST` access
+- direct host IPC calls such as `aichat_send_message`
+
+Those warnings are there to keep plugins aligned with the public SDK and improve long-term black-box compatibility.

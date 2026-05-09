@@ -54,6 +54,44 @@ export interface UseAppThemeReturn {
   cssVars: Record<string, string>;
 }
 
+export interface HostNavigationApi {
+  activeModule: string;
+  activeSettingsTab: string | null;
+  navigateToModule: (moduleId: string) => void;
+  openSettingsTab: (tabId: string) => void;
+}
+
+export interface HostFileIntent {
+  kind: string;
+  path: string;
+  source?: string | null;
+  mimeType?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UseHostFileIntentReturn {
+  intent: HostFileIntent | null;
+  setIntent: (intent: HostFileIntent | null) => void;
+  consume: () => void;
+}
+
+export interface UseHostModelsReturn<TModel> {
+  models: TModel[];
+  selectedModelId: string | null;
+  selectModel: (id: string | null) => void;
+  refresh: () => Promise<void>;
+}
+
+export interface HostAIRequest {
+  content: string;
+  [key: string]: unknown;
+}
+
+export interface UseHostAIReturn<TModel, TResult> extends UseHostModelsReturn<TModel> {
+  sendMessage: (request: string | HostAIRequest) => Promise<TResult>;
+  stopGeneration: () => Promise<boolean>;
+}
+
 // ─── Notification ─────────────────────────────────────────────────────────────
 
 export interface NotifyOptions {

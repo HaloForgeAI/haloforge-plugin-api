@@ -14,7 +14,7 @@ npm i -D typescript @types/react @types/react-dom
 ## Minimal Frontend Entry
 
 ```tsx
-import { definePlugin, invokePlugin } from "@haloforge/plugin-sdk";
+import { definePlugin, invokePlugin, registerPlugin } from "@haloforge/plugin-sdk";
 
 function HelloButton() {
   async function handleClick() {
@@ -25,11 +25,11 @@ function HelloButton() {
   return <button onClick={() => void handleClick()}>Greet</button>;
 }
 
-export default definePlugin({
+export default registerPlugin("com.example.hello-plugin", definePlugin({
   slots: {
     "devkit.toolbar": HelloButton,
   },
-});
+}));
 ```
 
 ## What To Use
@@ -37,8 +37,23 @@ export default definePlugin({
 - `definePlugin`: Level 1 and Level 2 plugins such as tabs and slot injections.
 - `defineModulePlugin`: Level 0 plugins that provide a full module panel.
 - `defineAssistantPlugin`: Level 3 plugins that register an assistant UI.
+- `registerPlugin`: register the bundle with HaloForge's runtime registry.
 - `invokePlugin`: call commands exposed by your Rust backend.
-- `usePluginSettings`, `useHostData`, `useSlotContext`: read host state inside your React components.
+- `useHostNavigation`, `useHostFileIntent`, `useHostModels`, `useHostAI`: stable host integration hooks for black-box-compatible plugins.
+- `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
+
+## Public Host API
+
+Prefer these host helpers over reading `window.__HF_HOST` directly:
+
+- `useHostNavigation()` for module switches and settings tabs
+- `useHostFileIntent()` for startup/external file-open intents
+- `useHostModels()` / `useAvailableModels()` for model lists and current selection
+- `useHostAI()` for AI transport and generation stop
+- `useHostTheme()` for theme tokens
+- `useHostEvent()` for stable host events
+
+These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
 
 ## Typical Setup
 

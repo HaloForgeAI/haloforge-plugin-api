@@ -60,9 +60,16 @@ Every plugin ships with a `manifest.json` that declares compatibility, capabilit
     "author": "You",
     "homepage": "https://github.com/you/hello-plugin",
     "compatibility": {
-        "min_app_version": "0.1.0"
+        "min_app_version": "0.1.0",
+        "min_host_api_version": "0.1.0"
     },
     "capability_levels": [2],
+    "host_capabilities": [
+        "navigation",
+        "file_intents",
+        "aichat",
+        "theme_read"
+    ],
     "integration": {
         "level2": {
             "slots": ["devkit.toolbar"]
@@ -134,7 +141,7 @@ declare_plugin!(MyPlugin, MyPlugin::new);
 ### 5. Implement the frontend entry
 
 ```tsx
-import { definePlugin, invokePlugin } from "@haloforge/plugin-sdk";
+import { definePlugin, invokePlugin, registerPlugin } from "@haloforge/plugin-sdk";
 
 function HelloButton() {
     async function handleClick() {
@@ -145,14 +152,14 @@ function HelloButton() {
     return <button onClick={() => void handleClick()}>Greet</button>;
 }
 
-export default definePlugin({
+export default registerPlugin("com.example.hello-plugin", definePlugin({
   slots: {
         "devkit.toolbar": HelloButton,
   },
-});
+}));
 ```
 
-When HaloForge loads the bundle, it injects the runtime plugin context needed by `invokePlugin`, hooks, slot context, and theme helpers.
+When HaloForge loads the bundle, it injects the runtime plugin context needed by `invokePlugin`, slot context, and the public host hooks. Plugin authors should prefer the SDK hooks over touching `window.__HF_HOST` directly.
 
 ### 6. Validate and package the plugin
 
@@ -187,9 +194,15 @@ The most important manifest fields are:
 - `integration`: per-level configuration, like slot IDs or module metadata.
 - `entry.native`: the compiled Rust library paths for each platform you ship.
 - `entry.frontend`: the built JavaScript bundle HaloForge should load.
+- `host_capabilities`: stable black-box-compatible host features consumed through `@haloforge/plugin-sdk`.
 - `permissions`: the host capabilities your plugin needs approved.
 
 See the [HaloForge organization](https://github.com/HaloForgeAI) for real plugin examples.
+
+Additional docs:
+
+- [docs/public-host-api.md](docs/public-host-api.md)
+- [docs/official-plugin-publishing.md](docs/official-plugin-publishing.md)
 
 ## CLI Packager
 

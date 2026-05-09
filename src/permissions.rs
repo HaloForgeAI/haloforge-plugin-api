@@ -50,6 +50,17 @@ pub enum Permission {
     /// Write to the clipboard.
     ClipboardWrite,
 
+    /// Navigate within the host UI (module switches, opening settings tabs).
+    HostNavigation,
+    /// Consume file-open intents routed by the host shell.
+    HostFileIntents,
+    /// Reuse the host AIChat transport and model selection.
+    HostAIChatAccess,
+    /// Read the active host theme and design tokens.
+    HostThemeRead,
+    /// Subscribe to stable host events exposed to plugins.
+    HostEventSubscribe,
+
     /// Read app config (theme, language).
     AppConfigRead,
 }
@@ -62,13 +73,18 @@ impl Permission {
             | Self::EventsListen
             | Self::DatabaseCreateTables
             | Self::AppConfigRead
-            | Self::Notifications => PermissionTier::Transparent,
+            | Self::Notifications
+            | Self::HostThemeRead => PermissionTier::Transparent,
 
             Self::DatabaseReadAll
             | Self::DatabaseRead(_)
             | Self::IpcRegister
             | Self::EventsEmit
-            | Self::NetworkHttpDomain(_) => PermissionTier::Standard,
+            | Self::NetworkHttpDomain(_)
+            | Self::HostNavigation
+            | Self::HostFileIntents
+            | Self::HostAIChatAccess
+            | Self::HostEventSubscribe => PermissionTier::Standard,
 
             Self::FilesystemRead
             | Self::FilesystemWrite
@@ -106,6 +122,11 @@ impl Permission {
             Self::Notifications             => "Show desktop notifications".into(),
             Self::ClipboardRead             => "Read the clipboard".into(),
             Self::ClipboardWrite            => "Write to the clipboard".into(),
+            Self::HostNavigation            => "Navigate within HaloForge".into(),
+            Self::HostFileIntents           => "Receive file-open intents from HaloForge".into(),
+            Self::HostAIChatAccess          => "Use HaloForge AI models and chat transport".into(),
+            Self::HostThemeRead             => "Read HaloForge theme tokens".into(),
+            Self::HostEventSubscribe        => "Subscribe to HaloForge host events".into(),
             Self::AppConfigRead             => "Read app configuration".into(),
         }
     }
@@ -121,4 +142,16 @@ pub enum PermissionTier {
     Sensitive = 2,
     /// Disabled by default; user must manually enable in Plugin Manager.
     Restricted = 3,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Permission, PermissionTier};
+
+    #[test]
+    fn host_permissions_have_expected_tiers() {
+        assert_eq!(Permission::HostThemeRead.tier(), PermissionTier::Transparent);
+        assert_eq!(Permission::HostNavigation.tier(), PermissionTier::Standard);
+        assert_eq!(Permission::HostAIChatAccess.tier(), PermissionTier::Standard);
+    }
 }

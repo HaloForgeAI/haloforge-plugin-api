@@ -1,25 +1,39 @@
-import { useContext, createContext, useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { _getPluginId } from "./ipc";
 import type {
-  UsePluginSettingsReturn,
-  UseAppThemeReturn,
-  HostDataResource,
-  UseHostDataReturn,
-  NotifyOptions,
   AppTheme,
+  HostAIRequest,
+  HostDataResource,
+  HostFileIntent,
+  HostNavigationApi,
+  NotifyOptions,
+  UseAppThemeReturn,
+  UseHostAIReturn,
+  UseHostDataReturn,
+  UseHostFileIntentReturn,
+  UseHostModelsReturn,
+  UsePluginSettingsReturn,
 } from "./types";
 
 // ─── Plugin context (injected by host) ───────────────────────────────────────
 
-interface PluginRuntimeContext {
+interface PluginRuntimeContextValue {
   pluginId: string;
   slotId: string;
   slotContext: Record<string, unknown>;
 }
 
 /** @internal — provided by the host's PluginSlot component */
-export const PluginRuntimeContext = createContext<PluginRuntimeContext>({
+export const PluginRuntimeContext = createContext<PluginRuntimeContextValue>({
   pluginId: "",
   slotId: "",
   slotContext: {},
@@ -38,15 +52,6 @@ export function usePluginInfo(): { id: string; slotId: string } {
 
 // ─── Plugin settings ──────────────────────────────────────────────────────────
 
-/**
- * Read and update settings for this plugin.
- * Settings are stored in the DB and survive restarts.
- *
- * @example
- * ```tsx
- * const { settings, updateSettings } = usePluginSettings<{ apiKey: string }>();
- * ```
- */
 export function usePluginSettings<T = Record<string, unknown>>(): UsePluginSettingsReturn<T> {
   const { pluginId } = useContext(PluginRuntimeContext);
   const [settings, setSettings] = useState<T>({} as T);
@@ -72,10 +77,6 @@ export function usePluginSettings<T = Record<string, unknown>>(): UsePluginSetti
 
 // ─── App theme ────────────────────────────────────────────────────────────────
 
-/**
- * Read the currently active HaloForge theme.
- * Re-renders whenever the user changes the theme.
- */
 export function useAppTheme(): UseAppThemeReturn {
   const [theme, setTheme] = useState<AppTheme>({
     id: "forge-dark",
@@ -85,24 +86,29 @@ export function useAppTheme(): UseAppThemeReturn {
   });
 
   useEffect(() => {
-    // Read CSS variables from the document root
     const readCssVars = () => {
       const style = getComputedStyle(document.documentElement);
       const varNames = [
-        "--color-primary", "--color-background", "--color-surface",
-        "--color-foreground", "--color-border", "--color-sidebar",
+        "--color-primary",
+        "--color-background",
+        "--color-surface",
+        "--color-foreground",
+        "--color-border",
+        "--color-sidebar",
       ];
       const colors: Record<string, string> = {};
       for (const name of varNames) {
         colors[name] = style.getPropertyValue(name).trim();
       }
-      setTheme((t) => ({ ...t, colors }));
+      setTheme((current) => ({ ...current, colors }));
     };
 
     readCssVars();
 
     const unlisten = listen("theme:changed", readCssVars);
-    return () => { unlisten.then((fn) => fn()); };
+    return () => {
+      unlisten.then((fn) => fn());
+    };
   }, []);
 
   return {
@@ -111,25 +117,343 @@ export function useAppTheme(): UseAppThemeReturn {
   };
 }
 
+export function useHostTheme(): UseAppThemeReturn {
+  return useAppTheme();
+}
+
+// ─── Host bridge (SDK-managed compatibility layer) ──────────────────────────
+
+interface HostAppSnapshot {
+  activeModule?: string;
+  activeSettingsTab?: string | null;
+  pendingFileIntent?: HostFileIntent | null;
+  pendingMarkdownOpenPath?: string | null;
+}
+
+interface HostAIChatSnapshot<TModel = Record<string, unknown>> {
+  modelConfigs?: TModel[];
+  selectedModelId?: string | null;
+}
+
+interface HostBridge {
+  app?: {
+    getSnapshot?: () => HostAppSnapshot;
+    setActiveModule?: (module: string) => void;
+    openSettingsTab?: (tab: string) => void;
+    setPendingFileIntent?: (intent: HostFileIntent | null) => void;
+    clearPendingFileIntent?: () => void;
+    setPendingMarkdownOpenPath?: (path: string | null) => void;
+    clearPendingMarkdownOpenPath?: () => void;
+  };
+  aichat?: {
+    fetchModelConfigs?: () => Promise<void>;
+    getSnapshot?: () => HostAIChatSnapshot;
+    setSelectedModelId?: (id: string | null) => void;
+  };
+}
+
+function getHostBridge(): HostBridge {
+  return (window as typeof window & { __HF_HOST?: HostBridge }).__HF_HOST ?? {};
+}
+
+function normalizeFileIntent(snapshot: HostAppSnapshot): HostFileIntent | null {
+  if (snapshot.pendingFileIntent && typeof snapshot.pendingFileIntent.path === "string") {
+    return snapshot.pendingFileIntent;
+  }
+
+  if (typeof snapshot.pendingMarkdownOpenPath === "string" && snapshot.pendingMarkdownOpenPath) {
+    return {
+      kind: "open",
+      path: snapshot.pendingMarkdownOpenPath,
+      source: "legacy-markdown-open",
+    };
+  }
+
+  return null;
+}
+
+type InternalHostAppState = {
+  activeModule: string;
+  activeSettingsTab: string | null;
+  pendingFileIntent: HostFileIntent | null;
+};
+
+const hostAppListeners = new Set<() => void>();
+let hostAppTimer: number | null = null;
+const hostAppState: InternalHostAppState = {
+  activeModule: "devkit",
+  activeSettingsTab: null,
+  pendingFileIntent: null,
+};
+
+function emitHostAppChange() {
+  hostAppListeners.forEach((listener) => listener());
+}
+
+function syncHostAppFromBridge() {
+  const snapshot = getHostBridge().app?.getSnapshot?.();
+  if (!snapshot) {
+    return;
+  }
+
+  let changed = false;
+  if (typeof snapshot.activeModule === "string" && snapshot.activeModule !== hostAppState.activeModule) {
+    hostAppState.activeModule = snapshot.activeModule;
+    changed = true;
+  }
+  if (
+    (typeof snapshot.activeSettingsTab === "string" || snapshot.activeSettingsTab === null)
+    && snapshot.activeSettingsTab !== hostAppState.activeSettingsTab
+  ) {
+    hostAppState.activeSettingsTab = snapshot.activeSettingsTab ?? null;
+    changed = true;
+  }
+
+  const nextIntent = normalizeFileIntent(snapshot);
+  if (JSON.stringify(nextIntent) !== JSON.stringify(hostAppState.pendingFileIntent)) {
+    hostAppState.pendingFileIntent = nextIntent;
+    changed = true;
+  }
+
+  if (changed) {
+    emitHostAppChange();
+  }
+}
+
+function startHostAppPolling() {
+  if (hostAppTimer !== null) {
+    return;
+  }
+  hostAppTimer = window.setInterval(syncHostAppFromBridge, 300);
+}
+
+function stopHostAppPolling() {
+  if (hostAppTimer === null || hostAppListeners.size > 0) {
+    return;
+  }
+  window.clearInterval(hostAppTimer);
+  hostAppTimer = null;
+}
+
+function subscribeHostApp(listener: () => void) {
+  hostAppListeners.add(listener);
+  syncHostAppFromBridge();
+  startHostAppPolling();
+  return () => {
+    hostAppListeners.delete(listener);
+    stopHostAppPolling();
+  };
+}
+
+function getHostAppSnapshot() {
+  syncHostAppFromBridge();
+  return hostAppState;
+}
+
+function setPendingFileIntent(intent: HostFileIntent | null) {
+  const hostApp = getHostBridge().app;
+  if (hostApp?.setPendingFileIntent) {
+    hostApp.setPendingFileIntent(intent);
+  } else if (intent && hostApp?.setPendingMarkdownOpenPath) {
+    hostApp.setPendingMarkdownOpenPath(intent.path);
+  } else if (!intent && hostApp?.clearPendingFileIntent) {
+    hostApp.clearPendingFileIntent();
+  } else if (!intent && hostApp?.clearPendingMarkdownOpenPath) {
+    hostApp.clearPendingMarkdownOpenPath();
+  }
+
+  hostAppState.pendingFileIntent = intent;
+  emitHostAppChange();
+}
+
+function clearPendingFileIntent() {
+  setPendingFileIntent(null);
+}
+
+type InternalHostAIState<TModel = Record<string, unknown>> = {
+  modelConfigs: TModel[];
+  selectedModelId: string | null;
+};
+
+const hostAIListeners = new Set<() => void>();
+let hostAITimer: number | null = null;
+const hostAIState: InternalHostAIState = {
+  modelConfigs: [],
+  selectedModelId: null,
+};
+
+function emitHostAIChange() {
+  hostAIListeners.forEach((listener) => listener());
+}
+
+function syncHostAIFromBridge() {
+  const snapshot = getHostBridge().aichat?.getSnapshot?.();
+  if (!snapshot) {
+    return;
+  }
+
+  let changed = false;
+  if (Array.isArray(snapshot.modelConfigs) && snapshot.modelConfigs !== hostAIState.modelConfigs) {
+    hostAIState.modelConfigs = snapshot.modelConfigs;
+    changed = true;
+  }
+  if (
+    (typeof snapshot.selectedModelId === "string" || snapshot.selectedModelId === null)
+    && snapshot.selectedModelId !== hostAIState.selectedModelId
+  ) {
+    hostAIState.selectedModelId = snapshot.selectedModelId ?? null;
+    changed = true;
+  }
+
+  if (changed) {
+    emitHostAIChange();
+  }
+}
+
+function startHostAIPolling() {
+  if (hostAITimer !== null) {
+    return;
+  }
+  hostAITimer = window.setInterval(syncHostAIFromBridge, 300);
+}
+
+function stopHostAIPolling() {
+  if (hostAITimer === null || hostAIListeners.size > 0) {
+    return;
+  }
+  window.clearInterval(hostAITimer);
+  hostAITimer = null;
+}
+
+function subscribeHostAI(listener: () => void) {
+  hostAIListeners.add(listener);
+  syncHostAIFromBridge();
+  startHostAIPolling();
+  return () => {
+    hostAIListeners.delete(listener);
+    stopHostAIPolling();
+  };
+}
+
+function getHostAISnapshot() {
+  syncHostAIFromBridge();
+  return hostAIState;
+}
+
+// ─── Public host hooks ───────────────────────────────────────────────────────
+
+export function useHostAppState(): {
+  activeModule: string;
+  activeSettingsTab: string | null;
+} {
+  const snapshot = useSyncExternalStore(subscribeHostApp, getHostAppSnapshot, getHostAppSnapshot);
+  return {
+    activeModule: snapshot.activeModule,
+    activeSettingsTab: snapshot.activeSettingsTab,
+  };
+}
+
+export function useHostNavigation(): HostNavigationApi {
+  const snapshot = useSyncExternalStore(subscribeHostApp, getHostAppSnapshot, getHostAppSnapshot);
+
+  const navigateToModule = useCallback((moduleId: string) => {
+    getHostBridge().app?.setActiveModule?.(moduleId);
+    hostAppState.activeModule = moduleId;
+    emitHostAppChange();
+  }, []);
+
+  const openSettingsTab = useCallback((tabId: string) => {
+    const hostApp = getHostBridge().app;
+    if (hostApp?.openSettingsTab) {
+      hostApp.openSettingsTab(tabId);
+    } else {
+      hostApp?.setActiveModule?.("settings");
+    }
+    hostAppState.activeModule = "settings";
+    hostAppState.activeSettingsTab = tabId;
+    emitHostAppChange();
+  }, []);
+
+  return {
+    activeModule: snapshot.activeModule,
+    activeSettingsTab: snapshot.activeSettingsTab,
+    navigateToModule,
+    openSettingsTab,
+  };
+}
+
+export function useHostFileIntent(): UseHostFileIntentReturn {
+  const snapshot = useSyncExternalStore(subscribeHostApp, getHostAppSnapshot, getHostAppSnapshot);
+
+  return {
+    intent: snapshot.pendingFileIntent,
+    setIntent: setPendingFileIntent,
+    consume: clearPendingFileIntent,
+  };
+}
+
+export function useHostModels<TModel = Record<string, unknown>>(): UseHostModelsReturn<TModel> {
+  const snapshot = useSyncExternalStore(subscribeHostAI, getHostAISnapshot, getHostAISnapshot);
+
+  const refresh = useCallback(async () => {
+    await getHostBridge().aichat?.fetchModelConfigs?.();
+    syncHostAIFromBridge();
+  }, []);
+
+  const selectModel = useCallback((id: string | null) => {
+    getHostBridge().aichat?.setSelectedModelId?.(id);
+    hostAIState.selectedModelId = id;
+    emitHostAIChange();
+  }, []);
+
+  return {
+    models: snapshot.modelConfigs as TModel[],
+    selectedModelId: snapshot.selectedModelId,
+    selectModel,
+    refresh,
+  };
+}
+
+export function useAvailableModels<TModel = Record<string, unknown>>(): UseHostModelsReturn<TModel> {
+  return useHostModels<TModel>();
+}
+
+export function useHostAI<
+  TModel = Record<string, unknown>,
+  TResult = unknown,
+>(): UseHostAIReturn<TModel, TResult> {
+  const { models, selectedModelId, selectModel, refresh } = useHostModels<TModel>();
+
+  const sendMessage = useCallback(async (request: string | HostAIRequest): Promise<TResult> => {
+    const normalizedRequest = typeof request === "string" ? { content: request } : request;
+    return invoke<TResult>("aichat_send_message", { request: normalizedRequest });
+  }, []);
+
+  const stopGeneration = useCallback(async () => {
+    return invoke<boolean>("aichat_stop_generation");
+  }, []);
+
+  return {
+    models,
+    selectedModelId,
+    selectModel,
+    refresh,
+    sendMessage,
+    stopGeneration,
+  };
+}
+
 // ─── Host data access ─────────────────────────────────────────────────────────
 
 const HOST_DATA_COMMANDS: Record<HostDataResource, string> = {
-  "devkit.profiles":    "devkit_get_profiles",
-  "devkit.workflows":   "devkit_get_workflows",
-  "devkit.snippets":    "devkit_get_snippets",
+  "devkit.profiles": "devkit_get_profiles",
+  "devkit.workflows": "devkit_get_workflows",
+  "devkit.snippets": "devkit_get_snippets",
   "devkit.directories": "devkit_get_directories",
-  "aichat.sessions":    "aichat_get_sessions",
-  "aichat.models":      "aichat_get_model_configs",
+  "aichat.sessions": "aichat_get_sessions",
+  "aichat.models": "aichat_get_model_configs",
 };
 
-/**
- * Read host app data. Requires the matching `database:read:*` permission.
- *
- * @example
- * ```tsx
- * const { data: profiles } = useHostData("devkit.profiles");
- * ```
- */
 export function useHostData<T = unknown>(resource: HostDataResource): UseHostDataReturn<T> {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,9 +472,11 @@ export function useHostData<T = unknown>(resource: HostDataResource): UseHostDat
     }
   }, [resource]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => {
+    void fetch();
+  }, [fetch]);
 
-  return { data, loading, error, refetch: fetch };
+  return { data, loading, error, refetch: () => void fetch() };
 }
 
 // ─── Plugin storage (lightweight KV) ─────────────────────────────────────────
@@ -168,19 +494,15 @@ export function usePluginStorage() {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 
-let _toastEmitter: ((opts: NotifyOptions) => void) | null = null;
+let toastEmitter: ((opts: NotifyOptions) => void) | null = null;
 
-/** @internal — called by the host to wire up the toast system */
 export function _setToastEmitter(fn: (opts: NotifyOptions) => void): void {
-  _toastEmitter = fn;
+  toastEmitter = fn;
 }
 
-/**
- * Show a toast notification in the HaloForge UI.
- */
 export function notify(options: NotifyOptions): void {
-  if (_toastEmitter) {
-    _toastEmitter(options);
+  if (toastEmitter) {
+    toastEmitter(options);
   } else {
     console.info(`[plugin toast] ${options.title}: ${options.message}`);
   }
@@ -188,34 +510,35 @@ export function notify(options: NotifyOptions): void {
 
 // ─── App events ───────────────────────────────────────────────────────────────
 
-/**
- * Subscribe to a HaloForge app event.
- * Automatically unsubscribes when the component unmounts.
- *
- * @example
- * ```tsx
- * useAppEvent("workflow:step_update", (payload) => console.log(payload));
- * ```
- */
 export function useAppEvent(
   event: string,
   handler: (payload: unknown) => void,
 ): void {
   useEffect(() => {
     const unlisten = listen(event, (e) => handler(e.payload));
-    return () => { unlisten.then((fn) => fn()); };
+    return () => {
+      unlisten.then((fn) => fn());
+    };
   }, [event, handler]);
 }
 
-/**
- * Emit a plugin-scoped event.
- */
-export function emitPluginEvent(event: string, payload: unknown): void {
-  const { pluginId } = useContext(PluginRuntimeContext) as PluginRuntimeContext;
-  invoke("plugin_invoke", {
+export function useHostEvent(
+  event: string,
+  handler: (payload: unknown) => void,
+): void {
+  useAppEvent(event, handler);
+}
+
+export async function emitPluginEvent(event: string, payload: unknown): Promise<void> {
+  const pluginId = _getPluginId();
+  if (!pluginId) {
+    throw new Error("[plugin-sdk] emitPluginEvent: plugin ID not set. Did you call registerPlugin()?");
+  }
+
+  await invoke("plugin_invoke", {
     args: {
       wire_name: `plugin_${pluginId.replace(/[.\-]/g, "_")}_emit_event`,
       args: { event, payload },
     },
-  }).catch(() => {}); // best-effort
+  });
 }

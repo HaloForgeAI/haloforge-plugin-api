@@ -9,6 +9,11 @@ export function _setPluginId(id: string): void {
   _currentPluginId = id;
 }
 
+/** @internal Exposed for SDK helpers that cannot rely on React context. */
+export function _getPluginId(): string {
+  return _currentPluginId;
+}
+
 /**
  * Call a Tauri command registered by this plugin's Rust backend.
  * The command name is automatically prefixed: `plugin_{id}_{command}`.

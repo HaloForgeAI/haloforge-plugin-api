@@ -4,13 +4,14 @@ pub mod permissions;
 pub mod types;
 
 pub use error::PluginError;
-pub use manifest::{PluginManifest, CapabilityLevel, IntegrationConfig};
+pub use manifest::{CapabilityLevel, HostCapability, IntegrationConfig, PluginManifest};
 pub use permissions::Permission;
 pub use types::*;
 
 /// The stable ABI version of this plugin API.
 /// Increment MAJOR on any breaking change to the HaloForgePlugin trait or context traits.
 pub const PLUGIN_ABI_VERSION: u32 = 1;
+pub const PUBLIC_HOST_API_VERSION: &str = "0.1.0";
 
 // ─── The core plugin trait ────────────────────────────────────────────────────
 
@@ -276,7 +277,7 @@ pub trait IpcRegistrar: Send + Sync {
 /// Every native plugin crate must call this macro exactly once.
 ///
 /// # Example
-/// ```rust
+/// ```ignore
 /// declare_plugin!(MyPlugin, MyPlugin::new);
 /// ```
 #[macro_export]

@@ -32,10 +32,12 @@ export interface Manifest {
   keywords?: string[];
   compatibility: {
     min_app_version: string;
+    min_host_api_version?: string;
     max_app_version?: string;
     platforms?: string[];
   };
   capability_levels: number[];
+  host_capabilities?: string[];
   entry?: {
     native?: Record<string, string>;
     frontend?: string;
@@ -69,6 +71,12 @@ interface CopyTarget {
   directory: boolean;
 }
 
+interface PublicApiUsageWarning {
+  code: string;
+  message: string;
+  files: string[];
+}
+
 export interface PackOptions {
   out?: string;
   release?: boolean;
@@ -99,10 +107,11 @@ export interface SubmitOptions {
 }
 
 export async function checkPlugin(pluginDirPath: string): Promise<void> {
-  const { manifest } = await loadManifest(pluginDirPath);
+  const { pluginDir, manifest } = await loadManifest(pluginDirPath);
   console.log(
     `${chalk.green("✓")} manifest is valid for ${chalk.bold(manifest.name)} v${chalk.yellow(manifest.version)}`,
   );
+  await printPublicApiWarnings(pluginDir);
 }
 
 export async function infoTarget(targetPath: string): Promise<void> {
@@ -141,6 +150,7 @@ export async function packPlugin(pluginDirPath: string, options: PackOptions): P
     console.log(
       `${chalk.cyan.bold("Packing")} ${chalk.white.bold(manifest.name)} v${chalk.yellow(manifest.version)} ${chalk.dim(`(${manifest.id})`)}`,
     );
+    await printPublicApiWarnings(pluginDir);
 
     await writeStageManifest(stageDir, raw);
 
@@ -320,6 +330,15 @@ function validateManifest(manifest: Manifest): void {
     throw new Error("manifest.compatibility is required");
   }
   requireString(manifest.compatibility.min_app_version, "manifest.compatibility.min_app_version");
+  if (manifest.compatibility.min_host_api_version !== undefined) {
+    requireString(
+      manifest.compatibility.min_host_api_version,
+      "manifest.compatibility.min_host_api_version",
+    );
+    if (!SEMVER_RE.test(manifest.compatibility.min_host_api_version)) {
+      throw new Error("manifest.compatibility.min_host_api_version must be a semantic version like 0.1.0");
+    }
+  }
 
   if (!Array.isArray(manifest.capability_levels) || manifest.capability_levels.length === 0) {
     throw new Error("manifest.capability_levels must contain at least one capability level");
@@ -327,6 +346,18 @@ function validateManifest(manifest: Manifest): void {
   for (const level of manifest.capability_levels) {
     if (!Number.isInteger(level) || level < 0 || level > 4) {
       throw new Error(`invalid capability level: ${String(level)}`);
+    }
+  }
+
+  if (manifest.host_capabilities !== undefined) {
+    if (!Array.isArray(manifest.host_capabilities)) {
+      throw new Error("manifest.host_capabilities must be an array when provided");
+    }
+    for (const capability of manifest.host_capabilities) {
+      requireString(capability, "manifest.host_capabilities[]");
+      if (!HOST_CAPABILITIES.has(capability)) {
+        throw new Error(`invalid host capability: ${capability}`);
+      }
     }
   }
 
@@ -673,6 +704,93 @@ async function findFrontendDir(pluginDir: string): Promise<string | null> {
     }
   }
   return null;
+}
+
+async function printPublicApiWarnings(pluginDir: string): Promise<void> {
+  const warnings = await inspectPublicApiUsage(pluginDir);
+  for (const warning of warnings) {
+    console.warn(`${chalk.yellow.bold("warning:")} ${warning.message}`);
+    for (const file of warning.files) {
+      console.warn(`  ${chalk.dim(warning.code)} ${file}`);
+    }
+  }
+}
+
+async function inspectPublicApiUsage(pluginDir: string): Promise<PublicApiUsageWarning[]> {
+  const sourceFiles = await collectPluginSourceFiles(pluginDir);
+  const findings = new Map<string, PublicApiUsageWarning>();
+
+  for (const filePath of sourceFiles) {
+    const content = await readFile(filePath, "utf8");
+
+    if (content.includes("__HF_HOST")) {
+      appendWarning(
+        findings,
+        "private-host-bridge",
+        "Found direct `__HF_HOST` usage. Prefer `@haloforge/plugin-sdk` host hooks so the plugin stays compatible with a black-box HaloForge host.",
+        filePath,
+      );
+    }
+
+    for (const command of DIRECT_HOST_IPC_COMMANDS) {
+      if (content.includes(command)) {
+        appendWarning(
+          findings,
+          "direct-host-ipc",
+          "Found direct host IPC usage. Prefer `@haloforge/plugin-sdk` host APIs instead of hard-coding HaloForge internal commands.",
+          filePath,
+        );
+        break;
+      }
+    }
+  }
+
+  return [...findings.values()];
+}
+
+function appendWarning(
+  findings: Map<string, PublicApiUsageWarning>,
+  code: string,
+  message: string,
+  filePath: string,
+) {
+  const entry = findings.get(code);
+  const normalizedPath = toPosix(filePath);
+  if (entry) {
+    if (!entry.files.includes(normalizedPath)) {
+      entry.files.push(normalizedPath);
+    }
+    return;
+  }
+
+  findings.set(code, {
+    code,
+    message,
+    files: [normalizedPath],
+  });
+}
+
+async function collectPluginSourceFiles(rootDir: string): Promise<string[]> {
+  const files: string[] = [];
+  const entries = await readdir(rootDir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (IGNORED_PLUGIN_SOURCE_DIRS.has(entry.name)) {
+      continue;
+    }
+
+    const fullPath = path.join(rootDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...(await collectPluginSourceFiles(fullPath)));
+      continue;
+    }
+
+    if (SOURCE_FILE_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+      files.push(fullPath);
+    }
+  }
+
+  return files;
 }
 
 function detectPackageManager(frontendDir: string): {
@@ -1023,6 +1141,9 @@ function normalizeTags(manifest: Manifest): string[] {
   for (const level of manifest.capability_levels) {
     tags.add(`level-${String(level)}`);
   }
+  for (const capability of manifest.host_capabilities ?? []) {
+    tags.add(`host-${capability}`);
+  }
   return [...tags].sort();
 }
 
@@ -1126,6 +1247,46 @@ function toPosix(filePath: string): string {
 }
 
 const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
+const HOST_CAPABILITIES = new Set([
+  "navigation",
+  "app_state",
+  "file_intents",
+  "aichat",
+  "theme_read",
+  "event_subscribe",
+]);
+
+const DIRECT_HOST_IPC_COMMANDS = [
+  "aichat_send_message",
+  "aichat_stop_generation",
+  "aichat_get_model_configs",
+  "aichat_get_sessions",
+  "devkit_get_profiles",
+  "devkit_get_workflows",
+  "devkit_get_snippets",
+  "devkit_get_directories",
+];
+
+const IGNORED_PLUGIN_SOURCE_DIRS = new Set([
+  ".git",
+  "dist",
+  "build",
+  ".output",
+  "node_modules",
+  "target",
+]);
+
+const SOURCE_FILE_EXTENSIONS = new Set([
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+]);
 
 const PLATFORM_LABELS: Record<string, string> = {
   macos_arm64: "macOS arm64",

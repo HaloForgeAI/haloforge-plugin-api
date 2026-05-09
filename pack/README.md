@@ -46,6 +46,17 @@ The CLI also accepts these common variants:
 - Frontend in `frontend/`, `app/`, `ui/`, `web/`, or the plugin root.
 - Frontend builds emitted to `dist/`, `build/`, or `.output/`.
 
+## Black-box compatibility checks
+
+`hf-pack check` and `hf-pack pack` validate `host_capabilities` and `compatibility.min_host_api_version` when present.
+
+They also warn when plugin source code appears to depend on:
+
+- direct `__HF_HOST` access
+- direct host IPC calls such as `aichat_send_message`
+
+Those warnings are meant to steer plugins toward the documented `@haloforge/plugin-sdk` host APIs.
+
 ## What the CLI Does
 
 1. Validates `manifest.json`.

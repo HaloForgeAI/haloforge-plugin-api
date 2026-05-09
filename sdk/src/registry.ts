@@ -71,11 +71,12 @@ export function defineAssistantPlugin(options: AssistantPluginOptions): PluginDe
 
 /**
  * Register this plugin's definition with the host app.
- * Called automatically when the plugin bundle is imported.
+ * Call this from your bundle entry after `definePlugin(...)`.
  */
-export function registerPlugin(pluginId: string, definition: PluginDefinition): void {
+export function registerPlugin(pluginId: string, definition: PluginDefinition): PluginDefinition {
   _setPluginId(pluginId);
   if (typeof window !== "undefined" && window.__hf_plugin_registry) {
     window.__hf_plugin_registry.register(pluginId, definition);
   }
+  return definition;
 }
