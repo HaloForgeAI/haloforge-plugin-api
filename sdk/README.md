@@ -40,6 +40,7 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `registerPlugin`: register the bundle with HaloForge's runtime registry.
 - `invokePlugin`: call commands exposed by your Rust backend.
 - `useHostNavigation`, `useHostFileIntent`, `useHostModels`, `useHostAI`: stable host integration hooks for black-box-compatible plugins.
+- `pickHostFile`, `pickHostDirectory`, `saveHostFile`: stable host file dialog helpers.
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
 
 ## Public Host API
@@ -48,8 +49,9 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 
 - `useHostNavigation()` for module switches and settings tabs
 - `useHostFileIntent()` for startup/external file-open intents
+- `pickHostFile()` / `pickHostDirectory()` / `saveHostFile()` for host-owned file dialogs
 - `useHostModels()` / `useAvailableModels()` for model lists and current selection
-- `useHostAI()` for AI transport and generation stop
+- `useHostAI()` for AI transport, session creation, stream-state polling, and generation stop
 - `useHostTheme()` for theme tokens
 - `useHostEvent()` for stable host events
 

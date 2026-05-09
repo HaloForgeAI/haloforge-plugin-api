@@ -734,10 +734,13 @@ async function inspectPublicApiUsage(pluginDir: string): Promise<PublicApiUsageW
 
     for (const command of DIRECT_HOST_IPC_COMMANDS) {
       if (content.includes(command)) {
+        const message = command === "plugin_invoke"
+          ? "Found direct plugin IPC usage. Prefer `invokePlugin()` or `invokeOtherPlugin()` from `@haloforge/plugin-sdk` instead of manually constructing `plugin_invoke` wire names."
+          : "Found direct host IPC usage. Prefer `@haloforge/plugin-sdk` host APIs instead of hard-coding HaloForge internal commands.";
         appendWarning(
           findings,
-          "direct-host-ipc",
-          "Found direct host IPC usage. Prefer `@haloforge/plugin-sdk` host APIs instead of hard-coding HaloForge internal commands.",
+          command === "plugin_invoke" ? "direct-plugin-ipc" : "direct-host-ipc",
+          message,
           filePath,
         );
         break;
@@ -1252,20 +1255,27 @@ const HOST_CAPABILITIES = new Set([
   "navigation",
   "app_state",
   "file_intents",
+  "file_dialogs",
   "aichat",
   "theme_read",
   "event_subscribe",
 ]);
 
 const DIRECT_HOST_IPC_COMMANDS = [
+  "plugin_invoke",
   "aichat_send_message",
   "aichat_stop_generation",
+  "aichat_create_session",
+  "aichat_get_stream_state",
   "aichat_get_model_configs",
   "aichat_get_sessions",
   "devkit_get_profiles",
   "devkit_get_workflows",
   "devkit_get_snippets",
   "devkit_get_directories",
+  "devkit_pick_file",
+  "devkit_pick_directory",
+  "devkit_save_file",
 ];
 
 const IGNORED_PLUGIN_SOURCE_DIRS = new Set([

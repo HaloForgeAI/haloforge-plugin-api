@@ -54,6 +54,7 @@ They also warn when plugin source code appears to depend on:
 
 - direct `__HF_HOST` access
 - direct host IPC calls such as `aichat_send_message`
+- direct `plugin_invoke` usage with manually constructed wire names
 
 Those warnings are meant to steer plugins toward the documented `@haloforge/plugin-sdk` host APIs.
 

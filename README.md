@@ -67,6 +67,7 @@ Every plugin ships with a `manifest.json` that declares compatibility, capabilit
     "host_capabilities": [
         "navigation",
         "file_intents",
+        "file_dialogs",
         "aichat",
         "theme_read"
     ],
@@ -161,6 +162,14 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 
 When HaloForge loads the bundle, it injects the runtime plugin context needed by `invokePlugin`, slot context, and the public host hooks. Plugin authors should prefer the SDK hooks over touching `window.__HF_HOST` directly.
 
+For host-owned file pickers and AI transport helpers, the SDK also exports:
+
+- `pickHostFile()`
+- `pickHostDirectory()`
+- `saveHostFile()`
+- `useHostAI().createSession(...)`
+- `useHostAI().getStreamState(...)`
+
 ### 6. Validate and package the plugin
 
 ```bash
@@ -222,6 +231,12 @@ The CLI supports these plugin layouts:
 - Optional `assets/`, `native/`, and `LICENSE` files in the plugin root.
 
 It also supports common build-output layouts where the manifest points to packaged paths like `frontend/index.js`, while the actual frontend build emits files under `frontend/dist/` or `frontend/build/`.
+
+`hf-pack check` and `hf-pack pack` also warn on:
+
+- direct `__HF_HOST` access
+- direct host IPC strings such as `aichat_send_message`
+- direct `plugin_invoke` usage instead of `invokePlugin()` / `invokeOtherPlugin()`
 
 ## Capability Levels
 

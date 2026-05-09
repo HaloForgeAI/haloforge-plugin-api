@@ -8,11 +8,12 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { _getPluginId } from "./ipc";
+import { _getPluginId, invokeHost } from "./ipc";
 import type {
   AppTheme,
   HostAIRequest,
   HostDataResource,
+  HostFileDialogOptions,
   HostFileIntent,
   HostNavigationApi,
   NotifyOptions,
@@ -433,6 +434,14 @@ export function useHostAI<
     return invoke<boolean>("aichat_stop_generation");
   }, []);
 
+  const createSession = useCallback(async <TSession = unknown>(session: TSession): Promise<TSession> => {
+    return invoke<TSession>("aichat_create_session", { session });
+  }, []);
+
+  const getStreamState = useCallback(async <TStreamState = unknown>(sessionId: string): Promise<TStreamState | null> => {
+    return invoke<TStreamState | null>("aichat_get_stream_state", { sessionId });
+  }, []);
+
   return {
     models,
     selectedModelId,
@@ -440,7 +449,33 @@ export function useHostAI<
     refresh,
     sendMessage,
     stopGeneration,
+    createSession,
+    getStreamState,
   };
+}
+
+export async function pickHostFile(options: HostFileDialogOptions = {}): Promise<string | null> {
+  return invokeHost<string | null>("devkit_pick_file", {
+    title: options.title ?? null,
+    directory: options.directory ?? null,
+    filters: options.filters ?? null,
+  });
+}
+
+export async function pickHostDirectory(options: HostFileDialogOptions = {}): Promise<string | null> {
+  return invokeHost<string | null>("devkit_pick_directory", {
+    title: options.title ?? null,
+    directory: options.directory ?? null,
+  });
+}
+
+export async function saveHostFile(options: HostFileDialogOptions = {}): Promise<string | null> {
+  return invokeHost<string | null>("devkit_save_file", {
+    title: options.title ?? null,
+    directory: options.directory ?? null,
+    defaultName: options.defaultName ?? null,
+    filters: options.filters ?? null,
+  });
 }
 
 // ─── Host data access ─────────────────────────────────────────────────────────

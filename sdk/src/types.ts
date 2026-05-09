@@ -69,6 +69,13 @@ export interface HostFileIntent {
   metadata?: Record<string, unknown>;
 }
 
+export interface HostFileDialogOptions {
+  title?: string;
+  directory?: string;
+  filters?: string[];
+  defaultName?: string;
+}
+
 export interface UseHostFileIntentReturn {
   intent: HostFileIntent | null;
   setIntent: (intent: HostFileIntent | null) => void;
@@ -90,6 +97,8 @@ export interface HostAIRequest {
 export interface UseHostAIReturn<TModel, TResult> extends UseHostModelsReturn<TModel> {
   sendMessage: (request: string | HostAIRequest) => Promise<TResult>;
   stopGeneration: () => Promise<boolean>;
+  createSession: <TSession = unknown>(session: TSession) => Promise<TSession>;
+  getStreamState: <TStreamState = unknown>(sessionId: string) => Promise<TStreamState | null>;
 }
 
 // ─── Notification ─────────────────────────────────────────────────────────────

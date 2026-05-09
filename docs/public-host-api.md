@@ -30,6 +30,7 @@ Plugins can now declare:
     "navigation",
     "app_state",
     "file_intents",
+    "file_dialogs",
     "aichat",
     "theme_read",
     "event_subscribe"
@@ -42,6 +43,7 @@ Plugins can now declare:
 - `navigation`
 - `app_state`
 - `file_intents`
+- `file_dialogs`
 - `aichat`
 - `theme_read`
 - `event_subscribe`
@@ -58,7 +60,9 @@ The Rust crate now exports:
 The permission model also includes explicit host-facing permissions:
 
 - `host_navigation`
+- `host_app_state_read`
 - `host_file_intents`
+- `host_file_dialogs`
 - `host_aichat_access`
 - `host_theme_read`
 - `host_event_subscribe`
@@ -77,12 +81,13 @@ import {
   useHostFileIntent,
   useHostAI,
   useHostTheme,
+  pickHostFile,
 } from "@haloforge/plugin-sdk";
 
 function ExamplePanel() {
   const { openSettingsTab } = useHostNavigation();
   const { intent, consume } = useHostFileIntent();
-  const { models, selectedModelId, sendMessage } = useHostAI();
+  const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
   const { theme } = useHostTheme();
 
   return null;
@@ -103,6 +108,9 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `useHostAI()`
 - `useHostTheme()`
 - `useHostEvent()`
+- `pickHostFile()`
+- `pickHostDirectory()`
+- `saveHostFile()`
 
 The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
 
@@ -114,3 +122,5 @@ The SDK may still adapt to HaloForge's current bridge internally, but plugin cod
 - direct host IPC calls such as `aichat_send_message`
 
 Those warnings are there to keep plugins aligned with the public SDK and improve long-term black-box compatibility.
+
+They now also warn on direct `plugin_invoke` usage so plugin frontends are nudged toward `invokePlugin()` / `invokeOtherPlugin()` instead of hand-built wire names.

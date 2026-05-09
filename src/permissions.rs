@@ -52,8 +52,12 @@ pub enum Permission {
 
     /// Navigate within the host UI (module switches, opening settings tabs).
     HostNavigation,
+    /// Read stable host UI state such as the active module or settings tab.
+    HostAppStateRead,
     /// Consume file-open intents routed by the host shell.
     HostFileIntents,
+    /// Open stable host file and directory picker dialogs.
+    HostFileDialogs,
     /// Reuse the host AIChat transport and model selection.
     HostAIChatAccess,
     /// Read the active host theme and design tokens.
@@ -74,6 +78,7 @@ impl Permission {
             | Self::DatabaseCreateTables
             | Self::AppConfigRead
             | Self::Notifications
+            | Self::HostAppStateRead
             | Self::HostThemeRead => PermissionTier::Transparent,
 
             Self::DatabaseReadAll
@@ -83,6 +88,7 @@ impl Permission {
             | Self::NetworkHttpDomain(_)
             | Self::HostNavigation
             | Self::HostFileIntents
+            | Self::HostFileDialogs
             | Self::HostAIChatAccess
             | Self::HostEventSubscribe => PermissionTier::Standard,
 
@@ -123,7 +129,9 @@ impl Permission {
             Self::ClipboardRead             => "Read the clipboard".into(),
             Self::ClipboardWrite            => "Write to the clipboard".into(),
             Self::HostNavigation            => "Navigate within HaloForge".into(),
+            Self::HostAppStateRead          => "Read HaloForge UI state".into(),
             Self::HostFileIntents           => "Receive file-open intents from HaloForge".into(),
+            Self::HostFileDialogs           => "Open HaloForge file and directory dialogs".into(),
             Self::HostAIChatAccess          => "Use HaloForge AI models and chat transport".into(),
             Self::HostThemeRead             => "Read HaloForge theme tokens".into(),
             Self::HostEventSubscribe        => "Subscribe to HaloForge host events".into(),
@@ -150,8 +158,10 @@ mod tests {
 
     #[test]
     fn host_permissions_have_expected_tiers() {
+        assert_eq!(Permission::HostAppStateRead.tier(), PermissionTier::Transparent);
         assert_eq!(Permission::HostThemeRead.tier(), PermissionTier::Transparent);
         assert_eq!(Permission::HostNavigation.tier(), PermissionTier::Standard);
+        assert_eq!(Permission::HostFileDialogs.tier(), PermissionTier::Standard);
         assert_eq!(Permission::HostAIChatAccess.tier(), PermissionTier::Standard);
     }
 }
