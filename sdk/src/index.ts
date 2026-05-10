@@ -38,6 +38,10 @@ export type { PluginDefinition, FeaturePluginOptions, ModulePluginOptions, Assis
 // IPC
 export { invokePlugin, invokeOtherPlugin, invokeHost, _setPluginId } from "./ipc";
 
+// Components
+export { AppSelect } from "./components/AppSelect";
+export type { AppSelectProps, AppSelectChangeEvent } from "./components/AppSelect";
+
 // Hooks
 export {
   useSlotContext,

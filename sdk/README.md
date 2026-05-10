@@ -42,6 +42,8 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `useHostNavigation`, `useHostFileIntent`, `useHostModels`, `useHostAI`: stable host integration hooks for black-box-compatible plugins.
 - `pickHostFile`, `pickHostDirectory`, `saveHostFile`: stable host file dialog helpers.
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
+- `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
+- `AppSelect`: use the same host-styled dropdown/listbox HaloForge uses in the app.
 
 ## Public Host API
 
@@ -56,6 +58,33 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `useHostEvent()` for stable host events
 
 These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
+
+## Host-styled Selects
+
+```tsx
+import { AppSelect } from "@haloforge/plugin-sdk";
+
+export function ModelPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <AppSelect
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground"
+    >
+      <option value="gpt-5.4">GPT-5.4</option>
+      <option value="claude-sonnet-4.6">Claude Sonnet 4.6</option>
+    </AppSelect>
+  );
+}
+```
+
+`AppSelect` follows the active HaloForge theme automatically, so plugin dropdowns match the host app in both light and dark mode.
 
 ## Typical Setup
 
