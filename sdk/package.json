@@ -1,6 +1,6 @@
 {
   "name": "@haloforge/plugin-sdk",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "HaloForge Plugin SDK — build frontend components for HaloForge plugins",
   "type": "module",
   "main": "./dist/index.js",
@@ -12,7 +12,10 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch"
@@ -39,6 +42,12 @@
   "publishConfig": {
     "access": "public"
   },
-  "keywords": ["haloforge", "plugin", "sdk", "tauri", "gamedev"],
+  "keywords": [
+    "haloforge",
+    "plugin",
+    "sdk",
+    "tauri",
+    "gamedev"
+  ],
   "license": "MIT"
 }
