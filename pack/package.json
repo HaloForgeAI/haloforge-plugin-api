@@ -1,6 +1,6 @@
 {
   "name": "@haloforge/plugin-pack",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "HaloForge plugin packager CLI — validate, build, and bundle plugins into .hfpkg archives",
   "type": "module",
   "bin": {
@@ -9,7 +9,8 @@
   "files": ["dist", "README.md"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx src/cli.ts"
+    "dev": "tsx src/cli.ts",
+    "test": "npm run build && node --test tests/*.test.mjs"
   },
   "repository": {
     "type": "git",

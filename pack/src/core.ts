@@ -71,6 +71,11 @@ interface CopyTarget {
   directory: boolean;
 }
 
+interface ManifestPermission {
+  type: string;
+  value?: unknown;
+}
+
 interface PublicApiUsageWarning {
   code: string;
   message: string;
@@ -361,6 +366,8 @@ function validateManifest(manifest: Manifest): void {
     }
   }
 
+  validateManifestPermissions(manifest.permissions);
+
   const frontendPath = manifest.entry?.frontend;
   const stylesPath = manifest.entry?.frontend_styles;
 
@@ -374,6 +381,85 @@ function validateManifest(manifest: Manifest): void {
   if (manifest.entry?.native) {
     for (const [field, value] of Object.entries(manifest.entry.native)) {
       requireRelativePath(value, `manifest.entry.native.${field}`);
+    }
+  }
+}
+
+const HOST_AICHAT_ACCESS_PERMISSION = "host_aichat_access";
+const INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION = "host_a_i_chat_access";
+
+const PERMISSION_SCHEMAS = new Map<string, { value: "none" | "string" | "string-array" }>([
+  ["database_read_all", { value: "none" }],
+  ["database_read", { value: "string" }],
+  ["database_write", { value: "string" }],
+  ["database_create_tables", { value: "none" }],
+  ["filesystem_read", { value: "none" }],
+  ["filesystem_read_app_data", { value: "none" }],
+  ["filesystem_write", { value: "none" }],
+  ["filesystem_write_app_data", { value: "none" }],
+  ["network_http", { value: "none" }],
+  ["network_http_domain", { value: "string" }],
+  ["ipc_register", { value: "none" }],
+  ["events_emit", { value: "none" }],
+  ["events_listen", { value: "none" }],
+  ["ui_inject", { value: "none" }],
+  ["process_spawn", { value: "none" }],
+  ["process_spawn_whitelist", { value: "string-array" }],
+  ["notifications", { value: "none" }],
+  ["clipboard_read", { value: "none" }],
+  ["clipboard_write", { value: "none" }],
+  ["host_navigation", { value: "none" }],
+  ["host_app_state_read", { value: "none" }],
+  ["host_file_intents", { value: "none" }],
+  ["host_file_dialogs", { value: "none" }],
+  [HOST_AICHAT_ACCESS_PERMISSION, { value: "none" }],
+  ["host_theme_read", { value: "none" }],
+  ["host_event_subscribe", { value: "none" }],
+  ["app_config_read", { value: "none" }],
+]);
+
+function validateManifestPermissions(rawPermissions: unknown): void {
+  if (rawPermissions === undefined) {
+    return;
+  }
+  if (!Array.isArray(rawPermissions)) {
+    throw new Error("manifest.permissions must be an array when provided");
+  }
+  for (const [index, rawPermission] of rawPermissions.entries()) {
+    validateManifestPermission(rawPermission, index);
+  }
+}
+
+function validateManifestPermission(rawPermission: unknown, index: number): void {
+  if (!isPlainObject(rawPermission)) {
+    throw new Error(`manifest.permissions[${index}] must be a JSON object`);
+  }
+
+  const permission = rawPermission as unknown as ManifestPermission;
+  requireString(permission.type, `manifest.permissions[${index}].type`);
+
+  if (permission.type === INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION) {
+    throw new Error(
+      `manifest.permissions[${index}] uses invalid permission '${INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION}'. Use '${HOST_AICHAT_ACCESS_PERMISSION}'.`,
+    );
+  }
+
+  const schema = PERMISSION_SCHEMAS.get(permission.type);
+  if (!schema) {
+    throw new Error(`manifest.permissions[${index}] uses unknown permission '${permission.type}'.`);
+  }
+
+  if (schema.value === "string") {
+    requireString(permission.value, `manifest.permissions[${index}].value`);
+    return;
+  }
+
+  if (schema.value === "string-array") {
+    if (!Array.isArray(permission.value)) {
+      throw new Error(`manifest.permissions[${index}].value must be an array of strings`);
+    }
+    for (const [valueIndex, item] of permission.value.entries()) {
+      requireString(item, `manifest.permissions[${index}].value[${valueIndex}]`);
     }
   }
 }

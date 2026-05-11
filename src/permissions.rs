@@ -1,3 +1,5 @@
+use serde_json::Value;
+
 /// Fine-grained permissions a plugin must declare in its manifest.
 /// The host checks these at install time (user approval) and at runtime (sandbox enforcement).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -59,6 +61,7 @@ pub enum Permission {
     /// Open stable host file and directory picker dialogs.
     HostFileDialogs,
     /// Reuse the host AIChat transport and model selection.
+    #[serde(rename = "host_aichat_access")]
     HostAIChatAccess,
     /// Read the active host theme and design tokens.
     HostThemeRead,
@@ -68,6 +71,52 @@ pub enum Permission {
     /// Read app config (theme, language).
     AppConfigRead,
 }
+
+pub const HOST_AICHAT_ACCESS_PERMISSION: &str = "host_aichat_access";
+pub const INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION: &str = "host_a_i_chat_access";
+
+#[derive(Clone, Copy)]
+enum PermissionValueShape {
+    None,
+    String,
+    StringArray,
+}
+
+#[derive(Clone, Copy)]
+struct PermissionSchema {
+    type_name: &'static str,
+    value_shape: PermissionValueShape,
+}
+
+const PERMISSION_SCHEMAS: &[PermissionSchema] = &[
+    PermissionSchema { type_name: "database_read_all", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "database_read", value_shape: PermissionValueShape::String },
+    PermissionSchema { type_name: "database_write", value_shape: PermissionValueShape::String },
+    PermissionSchema { type_name: "database_create_tables", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "filesystem_read", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "filesystem_read_app_data", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "filesystem_write", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "filesystem_write_app_data", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "network_http", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "network_http_domain", value_shape: PermissionValueShape::String },
+    PermissionSchema { type_name: "ipc_register", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "events_emit", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "events_listen", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "ui_inject", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "process_spawn", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "process_spawn_whitelist", value_shape: PermissionValueShape::StringArray },
+    PermissionSchema { type_name: "notifications", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "clipboard_read", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "clipboard_write", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_navigation", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_app_state_read", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_file_intents", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_file_dialogs", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: HOST_AICHAT_ACCESS_PERMISSION, value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_theme_read", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_event_subscribe", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "app_config_read", value_shape: PermissionValueShape::None },
+];
 
 impl Permission {
     /// Approval tier for this permission.
@@ -140,6 +189,63 @@ impl Permission {
     }
 }
 
+pub fn validate_manifest_permissions_json(value: &Value) -> Result<(), String> {
+    let permissions = value
+        .as_array()
+        .ok_or_else(|| "Plugin manifest permissions must be an array.".to_string())?;
+
+    for (index, permission) in permissions.iter().enumerate() {
+        validate_manifest_permission_json(permission)
+            .map_err(|error| format!("manifest.permissions[{index}]: {error}"))?;
+    }
+
+    Ok(())
+}
+
+pub fn validate_manifest_permission_json(value: &Value) -> Result<(), String> {
+    let permission = value
+        .as_object()
+        .ok_or_else(|| "Plugin permission entries must be JSON objects.".to_string())?;
+    let type_name = permission
+        .get("type")
+        .and_then(Value::as_str)
+        .ok_or_else(|| "Plugin permission 'type' must be a string.".to_string())?;
+
+    if type_name == INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION {
+        return Err(format!(
+            "Invalid plugin permission '{INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION}'. Use '{HOST_AICHAT_ACCESS_PERMISSION}'."
+        ));
+    }
+
+    let schema = PERMISSION_SCHEMAS
+        .iter()
+        .find(|schema| schema.type_name == type_name)
+        .ok_or_else(|| format!("Unknown plugin permission '{type_name}'."))?;
+
+    match schema.value_shape {
+        PermissionValueShape::None => Ok(()),
+        PermissionValueShape::String => {
+            if permission.get("value").and_then(Value::as_str).is_some() {
+                Ok(())
+            } else {
+                Err(format!("Plugin permission '{type_name}' requires a string 'value'."))
+            }
+        }
+        PermissionValueShape::StringArray => {
+            let Some(values) = permission.get("value").and_then(Value::as_array) else {
+                return Err(format!("Plugin permission '{type_name}' requires an array 'value'."));
+            };
+            if values.iter().all(|value| value.as_str().is_some()) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "Plugin permission '{type_name}' requires every 'value' item to be a string."
+                ))
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PermissionTier {
     /// Auto-granted at install time with no user prompt.
@@ -154,7 +260,11 @@ pub enum PermissionTier {
 
 #[cfg(test)]
 mod tests {
-    use super::{Permission, PermissionTier};
+    use super::{
+        validate_manifest_permissions_json, Permission, PermissionTier,
+        HOST_AICHAT_ACCESS_PERMISSION, INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION,
+    };
+    use serde_json::json;
 
     #[test]
     fn host_permissions_have_expected_tiers() {
@@ -163,5 +273,37 @@ mod tests {
         assert_eq!(Permission::HostNavigation.tier(), PermissionTier::Standard);
         assert_eq!(Permission::HostFileDialogs.tier(), PermissionTier::Standard);
         assert_eq!(Permission::HostAIChatAccess.tier(), PermissionTier::Standard);
+    }
+
+    #[test]
+    fn host_aichat_access_serializes_with_canonical_name() {
+        assert_eq!(
+            serde_json::to_value(Permission::HostAIChatAccess).unwrap(),
+            json!({ "type": HOST_AICHAT_ACCESS_PERMISSION })
+        );
+    }
+
+    #[test]
+    fn host_aichat_access_deserializes_only_from_canonical_name() {
+        let parsed: Permission =
+            serde_json::from_value(json!({ "type": HOST_AICHAT_ACCESS_PERMISSION })).unwrap();
+        assert_eq!(parsed, Permission::HostAIChatAccess);
+
+        let error = serde_json::from_value::<Permission>(
+            json!({ "type": INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION }),
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains(HOST_AICHAT_ACCESS_PERMISSION));
+    }
+
+    #[test]
+    fn permission_validator_rejects_legacy_host_a_i_chat_name() {
+        let error = validate_manifest_permissions_json(&json!([
+            { "type": INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION }
+        ]))
+        .unwrap_err();
+        assert!(error.contains(INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION));
+        assert!(error.contains(HOST_AICHAT_ACCESS_PERMISSION));
     }
 }

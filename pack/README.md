@@ -50,6 +50,8 @@ The CLI also accepts these common variants:
 
 `hf-pack check` and `hf-pack pack` validate `host_capabilities` and `compatibility.min_host_api_version` when present.
 
+They also validate `manifest.permissions`. For AI Chat access, the only accepted permission name is `host_aichat_access`; `host_a_i_chat_access` is rejected with a direct error.
+
 They also warn when plugin source code appears to depend on:
 
 - direct `__HF_HOST` access

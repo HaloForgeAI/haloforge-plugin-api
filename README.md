@@ -51,6 +51,8 @@ Build your frontend into the file referenced by `manifest.json` under `entry.fro
 
 Every plugin ships with a `manifest.json` that declares compatibility, capabilities, entry points, and permissions.
 
+Permission names are strict. For AI Chat access, the only valid manifest permission name is `host_aichat_access`.
+
 ```json
 {
     "id": "com.example.hello-plugin",
@@ -220,6 +222,8 @@ Additional docs:
 - `hf-pack check <plugin-dir>` validates `manifest.json`.
 - `hf-pack info <plugin-dir-or-.hfpkg>` prints plugin metadata.
 - `hf-pack pack <plugin-dir>` builds and assembles a distributable `.hfpkg` archive.
+
+It rejects invalid permission names such as `host_a_i_chat_access` and points plugin authors to the canonical `host_aichat_access` name.
 - `hf-pack metadata <path.hfpkg>` emits catalog draft JSON and can sign it directly for official plugin publishing.
 - `hf-pack submit <catalog-draft.json>` uploads that draft to `admin.haloforge.link`.
 
