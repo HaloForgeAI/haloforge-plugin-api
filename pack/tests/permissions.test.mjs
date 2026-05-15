@@ -51,6 +51,19 @@ test("hf-pack check accepts host_aichat_access", async () => {
   );
 });
 
+test("hf-pack check accepts host_enterprise_gateway_access", async () => {
+  await withPluginDir(
+    {
+      ...BASE_MANIFEST,
+      host_capabilities: ["enterprise_gateway"],
+      permissions: [{ type: "host_enterprise_gateway_access" }],
+    },
+    async (pluginDir) => {
+      await assert.doesNotReject(() => checkPlugin(pluginDir));
+    },
+  );
+});
+
 test("hf-pack check rejects host_a_i_chat_access with a direct hint", async () => {
   await withPluginDir(
     {

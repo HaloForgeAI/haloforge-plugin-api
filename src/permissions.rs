@@ -63,6 +63,9 @@ pub enum Permission {
     /// Reuse the host AIChat transport and model selection.
     #[serde(rename = "host_aichat_access")]
     HostAIChatAccess,
+    /// Call enterprise/community model gateway endpoints through the host session.
+    #[serde(rename = "host_enterprise_gateway_access")]
+    HostEnterpriseGatewayAccess,
     /// Read the active host theme and design tokens.
     HostThemeRead,
     /// Subscribe to stable host events exposed to plugins.
@@ -73,6 +76,7 @@ pub enum Permission {
 }
 
 pub const HOST_AICHAT_ACCESS_PERMISSION: &str = "host_aichat_access";
+pub const HOST_ENTERPRISE_GATEWAY_ACCESS_PERMISSION: &str = "host_enterprise_gateway_access";
 pub const INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION: &str = "host_a_i_chat_access";
 
 #[derive(Clone, Copy)]
@@ -113,6 +117,7 @@ const PERMISSION_SCHEMAS: &[PermissionSchema] = &[
     PermissionSchema { type_name: "host_file_intents", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_file_dialogs", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: HOST_AICHAT_ACCESS_PERMISSION, value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: HOST_ENTERPRISE_GATEWAY_ACCESS_PERMISSION, value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_theme_read", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_event_subscribe", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "app_config_read", value_shape: PermissionValueShape::None },
@@ -139,6 +144,7 @@ impl Permission {
             | Self::HostFileIntents
             | Self::HostFileDialogs
             | Self::HostAIChatAccess
+            | Self::HostEnterpriseGatewayAccess
             | Self::HostEventSubscribe => PermissionTier::Standard,
 
             Self::FilesystemRead
@@ -182,6 +188,7 @@ impl Permission {
             Self::HostFileIntents           => "Receive file-open intents from HaloForge".into(),
             Self::HostFileDialogs           => "Open HaloForge file and directory dialogs".into(),
             Self::HostAIChatAccess          => "Use HaloForge AI models and chat transport".into(),
+            Self::HostEnterpriseGatewayAccess => "Use HaloForge enterprise model gateway through the host session".into(),
             Self::HostThemeRead             => "Read HaloForge theme tokens".into(),
             Self::HostEventSubscribe        => "Subscribe to HaloForge host events".into(),
             Self::AppConfigRead             => "Read app configuration".into(),
@@ -261,8 +268,9 @@ pub enum PermissionTier {
 #[cfg(test)]
 mod tests {
     use super::{
-        validate_manifest_permissions_json, Permission, PermissionTier,
-        HOST_AICHAT_ACCESS_PERMISSION, INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION,
+        validate_manifest_permission_json, validate_manifest_permissions_json, Permission,
+        PermissionTier, HOST_AICHAT_ACCESS_PERMISSION, HOST_ENTERPRISE_GATEWAY_ACCESS_PERMISSION,
+        INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION,
     };
     use serde_json::json;
 
@@ -273,6 +281,10 @@ mod tests {
         assert_eq!(Permission::HostNavigation.tier(), PermissionTier::Standard);
         assert_eq!(Permission::HostFileDialogs.tier(), PermissionTier::Standard);
         assert_eq!(Permission::HostAIChatAccess.tier(), PermissionTier::Standard);
+        assert_eq!(
+            Permission::HostEnterpriseGatewayAccess.tier(),
+            PermissionTier::Standard,
+        );
     }
 
     #[test]
@@ -305,5 +317,13 @@ mod tests {
         .unwrap_err();
         assert!(error.contains(INVALID_HOST_A_I_CHAT_ACCESS_PERMISSION));
         assert!(error.contains(HOST_AICHAT_ACCESS_PERMISSION));
+    }
+
+    #[test]
+    fn validates_enterprise_gateway_host_permission() {
+        validate_manifest_permission_json(&json!({
+            "type": HOST_ENTERPRISE_GATEWAY_ACCESS_PERMISSION
+        }))
+        .expect("host enterprise gateway permission should be valid");
     }
 }
