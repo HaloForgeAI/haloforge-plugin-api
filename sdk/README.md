@@ -54,10 +54,42 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `pickHostFile()` / `pickHostDirectory()` / `saveHostFile()` for host-owned file dialogs
 - `useHostModels()` / `useAvailableModels()` for model lists and current selection
 - `useHostAI()` for AI transport, session creation, stream-state polling, and generation stop
+- `enterpriseGateway()` for host-mediated enterprise image generation/edit access without exposing session tokens
 - `useHostTheme()` for theme tokens
 - `useHostEvent()` for stable host events
 
 These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
+
+## Enterprise Image Gateway
+
+Plugins that need enterprise model gateway access must declare and receive approval for:
+
+```json
+{ "type": "host_enterprise_gateway_access" }
+```
+
+Then call the SDK helper from registered plugin UI:
+
+```tsx
+import { enterpriseGateway } from "@haloforge/plugin-sdk";
+
+export function ImageStudioPanel() {
+  async function generate() {
+    const gateway = enterpriseGateway();
+    const result = await gateway.generateImages({
+      model: "gpt-image-1",
+      prompt: "Create a polished HaloForge plugin icon.",
+      size: "1024x1024",
+      n: 1,
+    });
+    console.log(result.hf_output_assets?.[0]?.public_url ?? result.data?.[0]?.url);
+  }
+
+  return <button onClick={() => void generate()}>Generate</button>;
+}
+```
+
+The host performs permission checks and forwards the request with the signed-in enterprise session. Plugins never receive the cloud session token.
 
 ## Host-styled Selects
 

@@ -64,6 +64,7 @@ The permission model also includes explicit host-facing permissions:
 - `host_file_intents`
 - `host_file_dialogs`
 - `host_aichat_access`
+- `host_enterprise_gateway_access`
 - `host_theme_read`
 - `host_event_subscribe`
 
@@ -81,6 +82,7 @@ import {
   useHostFileIntent,
   useHostAI,
   useHostTheme,
+  enterpriseGateway,
   pickHostFile,
 } from "@haloforge/plugin-sdk";
 
@@ -88,6 +90,7 @@ function ExamplePanel() {
   const { openSettingsTab } = useHostNavigation();
   const { intent, consume } = useHostFileIntent();
   const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
+  const gateway = enterpriseGateway();
   const { theme } = useHostTheme();
 
   return null;
@@ -106,6 +109,7 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `useHostModels()`
 - `useAvailableModels()`
 - `useHostAI()`
+- `enterpriseGateway()`
 - `useHostTheme()`
 - `useHostEvent()`
 - `pickHostFile()`
@@ -113,6 +117,8 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `saveHostFile()`
 
 The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
+
+`enterpriseGateway()` exposes host-mediated image generation, image edits, and saved output listing for plugins granted `host_enterprise_gateway_access`. The host forwards requests through the signed-in enterprise session and does not expose cloud tokens to plugin code.
 
 ## `hf-pack` guidance
 

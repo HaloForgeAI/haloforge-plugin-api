@@ -51,7 +51,7 @@ Build your frontend into the file referenced by `manifest.json` under `entry.fro
 
 Every plugin ships with a `manifest.json` that declares compatibility, capabilities, entry points, and permissions.
 
-Permission names are strict. For AI Chat access, the only valid manifest permission name is `host_aichat_access`.
+Permission names are strict. For AI Chat access, the only valid manifest permission name is `host_aichat_access`. For enterprise model gateway access, use `host_enterprise_gateway_access`.
 
 ```json
 {
