@@ -6,6 +6,7 @@ This repository contains **both** the Rust crate and the JavaScript/TypeScript S
 
 - SDK repository: https://github.com/HaloForgeAI/haloforge-plugin-api
 - HaloForge homepage: https://github.com/HaloForgeAI
+- Hosted plugin docs: https://docs.haloforge.link/plugins
 
 ## Packages
 
@@ -16,6 +17,13 @@ This repository contains **both** the Rust crate and the JavaScript/TypeScript S
 | `@haloforge/plugin-pack` | CLI | npm | `npx @haloforge/plugin-pack check .` |
 
 ## Start a Plugin
+
+For production plugin work, start with the full guide and template:
+
+- [Plugin development guide](docs/plugin-development-guide.md)
+- [中文插件开发指南](docs/zh/plugin-development-guide.md)
+- [Level 0 Rust + React template](templates/level0-rust-react)
+- [Plugin developer agent skill](skill/SKILL.md)
 
 ### 1. Create the Rust backend
 
@@ -214,6 +222,8 @@ Additional docs:
 
 - [docs/public-host-api.md](docs/public-host-api.md)
 - [docs/official-plugin-publishing.md](docs/official-plugin-publishing.md)
+- [docs/plugin-development-guide.md](docs/plugin-development-guide.md)
+- [docs/zh/plugin-development-guide.md](docs/zh/plugin-development-guide.md)
 
 ## CLI Packager
 

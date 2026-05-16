@@ -43,6 +43,7 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `pickHostFile`, `pickHostDirectory`, `saveHostFile`: stable host file dialog helpers.
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
 - `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
+- `enterpriseGateway`: call the host-managed image gateway without exposing cloud tokens. The function name is retained for compatibility; user-facing UI should say "HaloForge Cloud gateway" or "Managed gateway".
 - `AppSelect`: use the same host-styled dropdown/listbox HaloForge uses in the app.
 
 ## Public Host API
@@ -54,10 +55,48 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `pickHostFile()` / `pickHostDirectory()` / `saveHostFile()` for host-owned file dialogs
 - `useHostModels()` / `useAvailableModels()` for model lists and current selection
 - `useHostAI()` for AI transport, session creation, stream-state polling, and generation stop
+- `enterpriseGateway()` for host-managed image generation and image edits
 - `useHostTheme()` for theme tokens
 - `useHostEvent()` for stable host events
 
 These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
+
+## Managed Image Gateway
+
+Plugins that need HaloForge-managed image generation must declare and receive approval for:
+
+```json
+{
+  "host_capabilities": ["enterprise_gateway"],
+  "permissions": [
+    { "type": "host_enterprise_gateway_access" }
+  ]
+}
+```
+
+Then call the SDK helper from registered plugin UI:
+
+```tsx
+import { enterpriseGateway } from "@haloforge/plugin-sdk";
+
+export function ImagePanel() {
+  async function generate() {
+    const gateway = enterpriseGateway();
+    const result = await gateway.generateImages({
+      model: "gpt-image-1",
+      prompt: "Create a polished HaloForge plugin icon.",
+      size: "1024x1024",
+      n: 1,
+      response_format: "url",
+    });
+    console.log(result.hf_output_assets?.[0]?.public_url ?? result.data?.[0]?.url);
+  }
+
+  return <button onClick={() => void generate()}>Generate</button>;
+}
+```
+
+The host performs permission checks and forwards the request through the active HaloForge Cloud or Enterprise Server session. Plugins never receive cloud session tokens. Community-compatible plugins should also provide a user-configured OpenAI-compatible base URL fallback when practical.
 
 ## Host-styled Selects
 

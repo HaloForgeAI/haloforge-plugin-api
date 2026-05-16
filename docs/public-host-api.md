@@ -32,6 +32,7 @@ Plugins can now declare:
     "file_intents",
     "file_dialogs",
     "aichat",
+    "enterprise_gateway",
     "theme_read",
     "event_subscribe"
   ]
@@ -45,6 +46,7 @@ Plugins can now declare:
 - `file_intents`
 - `file_dialogs`
 - `aichat`
+- `enterprise_gateway`
 - `theme_read`
 - `event_subscribe`
 
@@ -64,6 +66,7 @@ The permission model also includes explicit host-facing permissions:
 - `host_file_intents`
 - `host_file_dialogs`
 - `host_aichat_access`
+- `host_enterprise_gateway_access`
 - `host_theme_read`
 - `host_event_subscribe`
 
@@ -81,6 +84,7 @@ import {
   useHostFileIntent,
   useHostAI,
   useHostTheme,
+  enterpriseGateway,
   pickHostFile,
 } from "@haloforge/plugin-sdk";
 
@@ -89,6 +93,7 @@ function ExamplePanel() {
   const { intent, consume } = useHostFileIntent();
   const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
   const { theme } = useHostTheme();
+  const gateway = enterpriseGateway();
 
   return null;
 }
@@ -106,6 +111,7 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `useHostModels()`
 - `useAvailableModels()`
 - `useHostAI()`
+- `enterpriseGateway()`
 - `useHostTheme()`
 - `useHostEvent()`
 - `pickHostFile()`
@@ -113,6 +119,14 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `saveHostFile()`
 
 The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
+
+### Managed image gateway
+
+`enterpriseGateway()` exposes host-mediated image generation, image edits, and saved output listing for plugins granted `host_enterprise_gateway_access`.
+
+The function name is retained for compatibility with the first gateway implementation. Plugin UI should describe it as "HaloForge Cloud gateway" or "managed image gateway" unless the product surface is explicitly enterprise-only.
+
+For Community Edition support, image plugins should also offer a custom OpenAI-compatible endpoint mode when practical. The host-managed gateway may route through HaloForge Cloud or Enterprise Server, and plugin code should not depend on which backend is active.
 
 ## `hf-pack` guidance
 

@@ -36,7 +36,7 @@ export { definePlugin, defineModulePlugin, defineAssistantPlugin, registerPlugin
 export type { PluginDefinition, FeaturePluginOptions, ModulePluginOptions, AssistantPluginOptions } from "./types";
 
 // IPC
-export { invokePlugin, invokeOtherPlugin, invokeHost, _setPluginId } from "./ipc";
+export { enterpriseGateway, invokePlugin, invokeOtherPlugin, invokeHost, _setPluginId } from "./ipc";
 
 // Components
 export { AppSelect } from "./components/AppSelect";
@@ -81,6 +81,13 @@ export type {
   UseHostModelsReturn,
   HostAIRequest,
   UseHostAIReturn,
+  EnterpriseGatewayApi,
+  GatewayImageGenerationResult,
+  GatewayOutputAsset,
+  GatewayOutputAssetList,
+  PluginGatewayImageEditFile,
+  PluginGatewayImageEditRequest,
+  PluginGatewayImageRequest,
   NotifyOptions,
   AppTheme,
 } from "./types";

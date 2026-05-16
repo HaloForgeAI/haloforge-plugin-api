@@ -110,6 +110,85 @@ export interface NotifyOptions {
   duration?: number;
 }
 
+// ─── Managed image gateway ──────────────────────────────────────────────────
+
+export interface GatewayOutputAsset {
+  id: string;
+  actor_user_id?: string | null;
+  request_log_id?: number | null;
+  upstream_channel_id?: string | null;
+  endpoint: string;
+  model?: string | null;
+  object_ref: string;
+  public_url: string;
+  content_type: string;
+  size_bytes: number;
+  checksum_sha256: string;
+  source?: string | null;
+  status?: string;
+  scan_status?: string;
+  share_scope?: string;
+  retention_expires_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GatewayImageGenerationResult {
+  created?: number;
+  hf_output_assets?: GatewayOutputAsset[];
+  data?: Array<{
+    url?: string;
+    b64_json?: string;
+    revised_prompt?: string;
+  }>;
+}
+
+export interface GatewayOutputAssetList {
+  outputs: GatewayOutputAsset[];
+}
+
+export interface PluginGatewayImageRequest {
+  model: string;
+  prompt: string;
+  size?: string;
+  n?: number;
+  quality?: string;
+  style?: string;
+  output_format?: string;
+  output_compression?: number;
+  moderation?: string;
+  response_format?: "url" | "b64_json";
+  user?: string;
+}
+
+export interface PluginGatewayImageEditFile {
+  field_name?: "image" | string;
+  file_name: string;
+  content_type?: string;
+  b64_json: string;
+}
+
+export interface PluginGatewayImageEditRequest {
+  model?: string;
+  prompt: string;
+  images: PluginGatewayImageEditFile[];
+  mask?: PluginGatewayImageEditFile;
+  size?: string;
+  n?: number;
+  quality?: string;
+  output_format?: string;
+  output_compression?: number;
+  moderation?: string;
+  response_format?: "url" | "b64_json";
+  user?: string;
+}
+
+export interface EnterpriseGatewayApi {
+  generateImages: (request: PluginGatewayImageRequest) => Promise<GatewayImageGenerationResult>;
+  editImages: (request: PluginGatewayImageEditRequest) => Promise<GatewayImageGenerationResult>;
+  listOutputs: (limit?: number) => Promise<GatewayOutputAssetList>;
+}
+
 // ─── Host data ────────────────────────────────────────────────────────────────
 
 export type HostDataResource =

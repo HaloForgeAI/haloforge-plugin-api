@@ -102,6 +102,7 @@ pub enum HostCapability {
     FileDialogs,
     #[serde(rename = "aichat")]
     AiChat,
+    EnterpriseGateway,
     ThemeRead,
     EventSubscribe,
 }
@@ -114,6 +115,7 @@ impl HostCapability {
             Self::FileIntents => "file_intents",
             Self::FileDialogs => "file_dialogs",
             Self::AiChat => "aichat",
+            Self::EnterpriseGateway => "enterprise_gateway",
             Self::ThemeRead => "theme_read",
             Self::EventSubscribe => "event_subscribe",
         }

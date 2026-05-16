@@ -1,0 +1,48 @@
+{
+  "id": "dev.example.template",
+  "name": "Template Plugin",
+  "version": "0.1.0",
+  "description": "A HaloForge Level 0 plugin template with a Rust backend and React panel.",
+  "long_description": "Use this template for full module plugins that need host theme integration, SDK controls, and native backend commands.",
+  "author": "Example",
+  "homepage": "https://docs.haloforge.link/plugins",
+  "license": "MIT",
+  "keywords": ["haloforge", "plugin", "template"],
+  "compatibility": {
+    "min_app_version": "0.1.0",
+    "min_host_api_version": "0.2.4",
+    "platforms": ["windows", "macos", "linux"]
+  },
+  "capability_levels": [0],
+  "host_capabilities": ["theme_read"],
+  "integration": {
+    "level0": {
+      "module_id": "template-plugin",
+      "module_label": "Template",
+      "module_icon": "Blocks",
+      "sidebar_position": "main",
+      "sidebar_order": 120,
+      "panel_entry": "app/dist/index.js"
+    }
+  },
+  "entry": {
+    "native": {
+      "macos_arm64": "backend/target/release/libhf_template_plugin.dylib",
+      "macos_x64": "backend/target/release/libhf_template_plugin.dylib",
+      "windows_x64": "backend/target/release/hf_template_plugin.dll",
+      "linux_x64": "backend/target/release/libhf_template_plugin.so"
+    },
+    "frontend": "app/dist/index.js",
+    "frontend_styles": "app/dist/styles.css"
+  },
+  "permissions": [
+    { "type": "ipc_register" },
+    { "type": "host_theme_read" }
+  ],
+  "commands": [
+    {
+      "id": "template_ping",
+      "description": "Return a basic health payload from the plugin backend."
+    }
+  ]
+}

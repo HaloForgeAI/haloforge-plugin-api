@@ -1,0 +1,13 @@
+[package]
+name = "hf-template-plugin"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+name = "hf_template_plugin"
+
+[dependencies]
+haloforge-plugin-api = "0.2.4"
+serde_json = "1"
