@@ -155,7 +155,6 @@ export function AppSelect({
           "disabled:cursor-not-allowed disabled:opacity-60",
           open && "border-primary/45 bg-surface/85 shadow-[0_16px_36px_-24px] shadow-black/70",
           className,
-          "pr-10",
         )}
       >
         <span className="min-w-0 flex-1 truncate">
@@ -163,10 +162,11 @@ export function AppSelect({
         </span>
         <ChevronDown
           size={14}
-          className={cx(
-            "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary/60 transition-transform",
-            open && "rotate-180",
-          )}
+          className="pointer-events-none shrink-0 text-foreground-secondary/60"
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 180ms ease",
+          }}
         />
       </button>
 

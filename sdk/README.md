@@ -118,6 +118,24 @@ export function ModelPicker({
 
 `AppSelect` follows the active HaloForge theme automatically, so plugin dropdowns match the host app in both light and dark mode.
 
+## Host-styled Tooltips
+
+```tsx
+import { AppTooltip } from "@haloforge/plugin-sdk";
+
+export function IconAction() {
+  return (
+    <AppTooltip content="Retry task" placement="top">
+      <button type="button" aria-label="Retry task">
+        Retry
+      </button>
+    </AppTooltip>
+  );
+}
+```
+
+`AppTooltip` renders through a body-level portal and clamps itself to the viewport, so it stays visible inside clipped plugin panels, galleries, and toolbar edges.
+
 ## Typical Setup
 
 1. Build the native backend with `haloforge-plugin-api`.

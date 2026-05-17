@@ -41,6 +41,8 @@ export { enterpriseGateway, invokePlugin, invokeOtherPlugin, invokeHost, _setPlu
 // Components
 export { AppSelect } from "./components/AppSelect";
 export type { AppSelectProps, AppSelectChangeEvent } from "./components/AppSelect";
+export { AppTooltip } from "./components/AppTooltip";
+export type { AppTooltipPlacement, AppTooltipProps } from "./components/AppTooltip";
 
 // Hooks
 export {
