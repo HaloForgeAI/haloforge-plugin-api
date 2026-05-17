@@ -59,7 +59,7 @@ Build your frontend into the file referenced by `manifest.json` under `entry.fro
 
 Every plugin ships with a `manifest.json` that declares compatibility, capabilities, entry points, and permissions.
 
-Permission names are strict. For AI Chat access, the only valid manifest permission name is `host_aichat_access`.
+Permission names are strict. For AI Chat access, the only valid manifest permission name is `host_aichat_access`. For enterprise model gateway access, use `host_enterprise_gateway_access`.
 
 ```json
 {
@@ -179,6 +179,9 @@ For host-owned file pickers and AI transport helpers, the SDK also exports:
 - `saveHostFile()`
 - `useHostAI().createSession(...)`
 - `useHostAI().getStreamState(...)`
+- `log()` and `createPluginLogger()`
+
+Frontend plugin logs written through `createPluginLogger()` are routed into HaloForge's app log file at `~/.haloforge/logs/haloforge.log.YYYY-MM-DD`.
 
 ### 6. Validate and package the plugin
 
@@ -190,6 +193,39 @@ npx @haloforge/plugin-pack submit dist/catalog-draft.json --token-env HF_ADMIN_T
 ```
 
 The packer validates `manifest.json`, builds the Rust backend, builds the frontend bundle, collects optional `assets/` and `LICENSE`, then writes a `.hfpkg` archive into `dist/`.
+
+### Logging and diagnostics
+
+Rust plugins can write into the same HaloForge log stream through the provided context:
+
+```rust
+ctx.log(LogLevel::Info, "image request started request_id=hfis-123 model=gpt-image-2.0");
+ctx.log(LogLevel::Error, "image request failed request_id=hfis-123 status=502 elapsed_ms=1842");
+```
+
+Frontend plugins should use the SDK helper:
+
+```tsx
+import { createPluginLogger } from "@haloforge/plugin-sdk";
+
+const logger = createPluginLogger("gateway");
+await logger.info("Generation started", { model: "gpt-image-2.0", size: "1024x1024" });
+await logger.error("Generation failed", { status: 502, elapsedMs: 1842 });
+```
+
+Log operational fields such as model, size, status, elapsed time, request ID, and output counts. Do not log API keys, bearer tokens, full prompts, or raw image/base64 payloads.
+
+### 7. Install into a local HaloForge workspace
+
+Use the HaloForge `hf` CLI to install and inspect the package locally:
+
+```bash
+cd /path/to/HaloForge
+npm run hf -- plugin install local /path/to/my-plugin/dist/dev.haloforge.example-0.1.0.hfpkg --json
+npm run hf -- plugin list --json
+```
+
+`npm run hf -- ...` is the source-checkout form. Installed Windows builds add `hf` to PATH, so a new terminal can use `hf plugin ...` directly. macOS automatic PATH linking is not implemented yet; run `command -v hf` before assuming the global command exists.
 
 ## Recommended Layout
 
@@ -251,6 +287,8 @@ It also supports common build-output layouts where the manifest points to packag
 - direct `__HF_HOST` access
 - direct host IPC strings such as `aichat_send_message`
 - direct `plugin_invoke` usage instead of `invokePlugin()` / `invokeOtherPlugin()`
+
+`hf-pack` is not the same tool as HaloForge's `hf` CLI. Use `hf-pack` to create `.hfpkg` archives; use `hf` to install those archives into the local HaloForge workspace and verify the installed plugin state.
 
 ## Capability Levels
 

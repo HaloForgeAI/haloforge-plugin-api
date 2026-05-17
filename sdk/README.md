@@ -45,6 +45,7 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
 - `enterpriseGateway`: call the host-managed image gateway without exposing cloud tokens. The function name is retained for compatibility; user-facing UI should say "HaloForge Cloud gateway" or "Managed gateway".
 - `AppSelect`: use the same host-styled dropdown/listbox HaloForge uses in the app.
+- `log`, `createPluginLogger`: write plugin frontend diagnostics into the HaloForge application log.
 
 ## Public Host API
 
@@ -58,6 +59,7 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `enterpriseGateway()` for host-managed image generation and image edits
 - `useHostTheme()` for theme tokens
 - `useHostEvent()` for stable host events
+- `log()` / `createPluginLogger()` for app-level plugin diagnostics
 
 These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
 
@@ -74,12 +76,14 @@ Plugins that need HaloForge-managed image generation must declare and receive ap
 }
 ```
 
+The host performs permission checks and forwards the request through the active HaloForge Cloud or Enterprise Server session. Plugins never receive cloud session tokens. Community-compatible plugins should also provide a user-configured OpenAI-compatible base URL fallback when practical.
+
 Then call the SDK helper from registered plugin UI:
 
 ```tsx
 import { enterpriseGateway } from "@haloforge/plugin-sdk";
 
-export function ImagePanel() {
+export function ImageStudioPanel() {
   async function generate() {
     const gateway = enterpriseGateway();
     const result = await gateway.generateImages({
@@ -96,7 +100,31 @@ export function ImagePanel() {
 }
 ```
 
-The host performs permission checks and forwards the request through the active HaloForge Cloud or Enterprise Server session. Plugins never receive cloud session tokens. Community-compatible plugins should also provide a user-configured OpenAI-compatible base URL fallback when practical.
+The function name is retained for compatibility with the first gateway implementation. Plugin UI should describe it as "HaloForge Cloud gateway" or "managed gateway" unless the product surface is explicitly enterprise-only.
+
+## Logging
+
+Use the SDK logger instead of `console.log` for events that should survive outside DevTools:
+
+```tsx
+import { createPluginLogger } from "@haloforge/plugin-sdk";
+
+const logger = createPluginLogger("image-generation");
+
+await logger.info("Generation started", {
+  model: "gpt-image-2.0",
+  size: "1024x1024",
+  count: 1,
+});
+
+await logger.error("Generation failed", {
+  status: 502,
+  elapsedMs: 1842,
+  error: "upstream gateway timeout",
+});
+```
+
+HaloForge writes these entries to `~/.haloforge/logs/haloforge.log.YYYY-MM-DD`. Keep `details` JSON-serializable, and never include API keys, bearer tokens, prompt text, or raw image/base64 payloads. Log counts, model IDs, endpoint kind, status, elapsed time, and short error summaries instead.
 
 ## Host-styled Selects
 
@@ -124,6 +152,24 @@ export function ModelPicker({
 ```
 
 `AppSelect` follows the active HaloForge theme automatically, so plugin dropdowns match the host app in both light and dark mode.
+
+## Host-styled Tooltips
+
+```tsx
+import { AppTooltip } from "@haloforge/plugin-sdk";
+
+export function IconAction() {
+  return (
+    <AppTooltip content="Retry task" placement="top">
+      <button type="button" aria-label="Retry task">
+        Retry
+      </button>
+    </AppTooltip>
+  );
+}
+```
+
+`AppTooltip` renders a fixed-position overlay and clamps itself to the viewport, so it stays visible inside clipped plugin panels, galleries, and toolbar edges.
 
 ## Typical Setup
 

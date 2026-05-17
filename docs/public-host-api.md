@@ -85,6 +85,7 @@ import {
   useHostAI,
   useHostTheme,
   enterpriseGateway,
+  createPluginLogger,
   pickHostFile,
 } from "@haloforge/plugin-sdk";
 
@@ -92,8 +93,10 @@ function ExamplePanel() {
   const { openSettingsTab } = useHostNavigation();
   const { intent, consume } = useHostFileIntent();
   const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
-  const { theme } = useHostTheme();
   const gateway = enterpriseGateway();
+  const { theme } = useHostTheme();
+  const logger = createPluginLogger("example");
+  void logger.info("Example panel mounted", { theme: theme.type });
 
   return null;
 }
@@ -117,6 +120,7 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `pickHostFile()`
 - `pickHostDirectory()`
 - `saveHostFile()`
+- `log()` / `createPluginLogger()`
 
 The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
 
@@ -128,6 +132,10 @@ The function name is retained for compatibility with the first gateway implement
 
 For Community Edition support, image plugins should also offer a custom OpenAI-compatible endpoint mode when practical. The host-managed gateway may route through HaloForge Cloud or Enterprise Server, and plugin code should not depend on which backend is active.
 
+### Logging
+
+`log()` and `createPluginLogger()` route frontend diagnostics into the HaloForge app log file at `~/.haloforge/logs/haloforge.log.YYYY-MM-DD`. Use them for plugin lifecycle, request start/success/failure, and recoverable host integration failures. Keep details small and JSON-serializable, and never include API keys, bearer tokens, full prompts, or raw image/base64 payloads.
+
 ## `hf-pack` guidance
 
 `hf-pack check` and `hf-pack pack` now warn when plugin source code appears to rely on:
@@ -138,3 +146,13 @@ For Community Edition support, image plugins should also offer a custom OpenAI-c
 Those warnings are there to keep plugins aligned with the public SDK and improve long-term black-box compatibility.
 
 They now also warn on direct `plugin_invoke` usage so plugin frontends are nudged toward `invokePlugin()` / `invokeOtherPlugin()` instead of hand-built wire names.
+
+After packaging, use the HaloForge `hf` CLI to install into a local workspace:
+
+```bash
+cd /path/to/HaloForge
+npm run hf -- plugin install local /path/to/plugin/dist/package/<plugin-id>-<version>.hfpkg --json
+npm run hf -- plugin list --json
+```
+
+On Windows installed builds, `hf` is added to PATH and can be run directly from a new terminal. macOS automatic PATH linking is not implemented yet; run `command -v hf` before assuming the global command exists.

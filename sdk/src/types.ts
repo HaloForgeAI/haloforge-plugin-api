@@ -110,6 +110,25 @@ export interface NotifyOptions {
   duration?: number;
 }
 
+// ─── Logging ─────────────────────────────────────────────────────────────────
+
+export type PluginLogLevel = "trace" | "debug" | "info" | "warn" | "error";
+
+export interface PluginLogOptions {
+  level?: PluginLogLevel;
+  message: string;
+  details?: unknown;
+  scope?: string;
+}
+
+export interface PluginLogger {
+  trace: (message: string, details?: unknown) => Promise<void>;
+  debug: (message: string, details?: unknown) => Promise<void>;
+  info: (message: string, details?: unknown) => Promise<void>;
+  warn: (message: string, details?: unknown) => Promise<void>;
+  error: (message: string, details?: unknown) => Promise<void>;
+}
+
 // ─── Managed image gateway ──────────────────────────────────────────────────
 
 export interface GatewayOutputAsset {

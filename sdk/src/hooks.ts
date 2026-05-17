@@ -17,6 +17,9 @@ import type {
   HostFileIntent,
   HostNavigationApi,
   NotifyOptions,
+  PluginLogger,
+  PluginLogLevel,
+  PluginLogOptions,
   UseAppThemeReturn,
   UseHostAIReturn,
   UseHostDataReturn,
@@ -541,6 +544,57 @@ export function notify(options: NotifyOptions): void {
   } else {
     console.info(`[plugin toast] ${options.title}: ${options.message}`);
   }
+}
+
+// ─── Logging ─────────────────────────────────────────────────────────────────
+
+function pluginLogScope(scope?: string): string {
+  const pluginId = _getPluginId();
+  const base = pluginId ? `plugin:${pluginId}` : "plugin";
+  const suffix = scope?.trim();
+  return suffix ? `${base}:${suffix}` : base;
+}
+
+function consoleForLogLevel(level: PluginLogLevel): (...args: unknown[]) => void {
+  if (level === "error") return console.error;
+  if (level === "warn") return console.warn;
+  if (level === "debug") return console.debug;
+  return console.info;
+}
+
+export async function log(
+  levelOrOptions: PluginLogLevel | PluginLogOptions,
+  message?: string,
+  details?: unknown,
+  scope?: string,
+): Promise<void> {
+  const options: PluginLogOptions = typeof levelOrOptions === "string"
+    ? { level: levelOrOptions, message: message ?? "", details, scope }
+    : levelOrOptions;
+  const level = options.level ?? "info";
+  const resolvedScope = pluginLogScope(options.scope);
+  const resolvedMessage = options.message.trim() || "Plugin log event";
+
+  try {
+    await invoke("frontend_log_event", {
+      level,
+      scope: resolvedScope,
+      message: resolvedMessage,
+      details: options.details ?? null,
+    });
+  } catch (error) {
+    consoleForLogLevel(level)(`[${resolvedScope}] ${resolvedMessage}`, options.details ?? "", error);
+  }
+}
+
+export function createPluginLogger(scope?: string): PluginLogger {
+  return {
+    trace: (message, details) => log("trace", message, details, scope),
+    debug: (message, details) => log("debug", message, details, scope),
+    info: (message, details) => log("info", message, details, scope),
+    warn: (message, details) => log("warn", message, details, scope),
+    error: (message, details) => log("error", message, details, scope),
+  };
 }
 
 // ─── App events ───────────────────────────────────────────────────────────────
