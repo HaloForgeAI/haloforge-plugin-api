@@ -66,6 +66,8 @@ export {
   useHostEvent,
   emitPluginEvent,
   notify,
+  log,
+  createPluginLogger,
   _setToastEmitter,
   PluginRuntimeContext,
 } from "./hooks";
@@ -91,5 +93,8 @@ export type {
   PluginGatewayImageEditRequest,
   PluginGatewayImageRequest,
   NotifyOptions,
+  PluginLogLevel,
+  PluginLogOptions,
+  PluginLogger,
   AppTheme,
 } from "./types";

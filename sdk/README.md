@@ -44,6 +44,7 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
 - `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
 - `AppSelect`: use the same host-styled dropdown/listbox HaloForge uses in the app.
+- `log`, `createPluginLogger`: write plugin frontend diagnostics into the HaloForge application log.
 
 ## Public Host API
 
@@ -57,8 +58,33 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `enterpriseGateway()` for host-mediated enterprise image generation/edit access without exposing session tokens
 - `useHostTheme()` for theme tokens
 - `useHostEvent()` for stable host events
+- `log()` / `createPluginLogger()` for app-level plugin diagnostics
 
 These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
+
+## Logging
+
+Use the SDK logger instead of `console.log` for events that should survive outside DevTools:
+
+```tsx
+import { createPluginLogger } from "@haloforge/plugin-sdk";
+
+const logger = createPluginLogger("image-generation");
+
+await logger.info("Generation started", {
+  model: "gpt-image-2.0",
+  size: "1024x1024",
+  count: 1,
+});
+
+await logger.error("Generation failed", {
+  status: 502,
+  elapsedMs: 1842,
+  error: "upstream gateway timeout",
+});
+```
+
+HaloForge writes these entries to `~/.haloforge/logs/haloforge.log.YYYY-MM-DD`. Keep `details` JSON-serializable, and never include API keys, bearer tokens, prompt text, or raw image/base64 payloads. Log counts, model IDs, endpoint kind, status, elapsed time, and short error summaries instead.
 
 ## Enterprise Image Gateway
 
@@ -134,7 +160,7 @@ export function IconAction() {
 }
 ```
 
-`AppTooltip` renders through a body-level portal and clamps itself to the viewport, so it stays visible inside clipped plugin panels, galleries, and toolbar edges.
+`AppTooltip` renders a fixed-position overlay and clamps itself to the viewport, so it stays visible inside clipped plugin panels, galleries, and toolbar edges.
 
 ## Typical Setup
 

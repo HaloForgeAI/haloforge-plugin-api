@@ -171,6 +171,9 @@ For host-owned file pickers and AI transport helpers, the SDK also exports:
 - `saveHostFile()`
 - `useHostAI().createSession(...)`
 - `useHostAI().getStreamState(...)`
+- `log()` and `createPluginLogger()`
+
+Frontend plugin logs written through `createPluginLogger()` are routed into HaloForge's app log file at `~/.haloforge/logs/haloforge.log.YYYY-MM-DD`.
 
 ### 6. Validate and package the plugin
 
@@ -182,6 +185,27 @@ npx @haloforge/plugin-pack submit dist/catalog-draft.json --token-env HF_ADMIN_T
 ```
 
 The packer validates `manifest.json`, builds the Rust backend, builds the frontend bundle, collects optional `assets/` and `LICENSE`, then writes a `.hfpkg` archive into `dist/`.
+
+### Logging and diagnostics
+
+Rust plugins can write into the same HaloForge log stream through the provided context:
+
+```rust
+ctx.log(LogLevel::Info, "image request started request_id=hfis-123 model=gpt-image-2.0");
+ctx.log(LogLevel::Error, "image request failed request_id=hfis-123 status=502 elapsed_ms=1842");
+```
+
+Frontend plugins should use the SDK helper:
+
+```tsx
+import { createPluginLogger } from "@haloforge/plugin-sdk";
+
+const logger = createPluginLogger("gateway");
+await logger.info("Generation started", { model: "gpt-image-2.0", size: "1024x1024" });
+await logger.error("Generation failed", { status: 502, elapsedMs: 1842 });
+```
+
+Log operational fields such as model, size, status, elapsed time, request ID, and output counts. Do not log API keys, bearer tokens, full prompts, or raw image/base64 payloads.
 
 ### 7. Install into a local HaloForge workspace
 

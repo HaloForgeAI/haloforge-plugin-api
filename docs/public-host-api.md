@@ -83,6 +83,7 @@ import {
   useHostAI,
   useHostTheme,
   enterpriseGateway,
+  createPluginLogger,
   pickHostFile,
 } from "@haloforge/plugin-sdk";
 
@@ -92,6 +93,8 @@ function ExamplePanel() {
   const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
   const gateway = enterpriseGateway();
   const { theme } = useHostTheme();
+  const logger = createPluginLogger("example");
+  void logger.info("Example panel mounted", { theme: theme.type });
 
   return null;
 }
@@ -115,10 +118,13 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `pickHostFile()`
 - `pickHostDirectory()`
 - `saveHostFile()`
+- `log()` / `createPluginLogger()`
 
 The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
 
 `enterpriseGateway()` exposes host-mediated image generation, image edits, and saved output listing for plugins granted `host_enterprise_gateway_access`. The host forwards requests through the signed-in enterprise session and does not expose cloud tokens to plugin code.
+
+`log()` and `createPluginLogger()` route frontend diagnostics into the HaloForge app log file at `~/.haloforge/logs/haloforge.log.YYYY-MM-DD`. Use them for plugin lifecycle, request start/success/failure, and recoverable host integration failures. Keep details small and JSON-serializable, and never include API keys, bearer tokens, full prompts, or raw image/base64 payloads.
 
 ## `hf-pack` guidance
 
