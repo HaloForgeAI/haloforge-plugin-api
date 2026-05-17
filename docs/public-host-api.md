@@ -33,6 +33,7 @@ Plugins can now declare:
     "file_dialogs",
     "aichat",
     "enterprise_gateway",
+    "deep_links",
     "theme_read",
     "event_subscribe"
   ]
@@ -47,6 +48,7 @@ Plugins can now declare:
 - `file_dialogs`
 - `aichat`
 - `enterprise_gateway`
+- `deep_links`
 - `theme_read`
 - `event_subscribe`
 
@@ -67,6 +69,7 @@ The permission model also includes explicit host-facing permissions:
 - `host_file_dialogs`
 - `host_aichat_access`
 - `host_enterprise_gateway_access`
+- `host_deep_links`
 - `host_theme_read`
 - `host_event_subscribe`
 
@@ -83,6 +86,7 @@ import {
   useHostNavigation,
   useHostFileIntent,
   useHostAI,
+  usePluginDeepLink,
   useHostTheme,
   enterpriseGateway,
   createPluginLogger,
@@ -92,6 +96,7 @@ import {
 function ExamplePanel() {
   const { openSettingsTab } = useHostNavigation();
   const { intent, consume } = useHostFileIntent();
+  usePluginDeepLink((link) => console.log("Received deep link", link.route, link.params));
   const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
   const gateway = enterpriseGateway();
   const { theme } = useHostTheme();
@@ -115,6 +120,7 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `useAvailableModels()`
 - `useHostAI()`
 - `enterpriseGateway()`
+- `pluginDeepLinks()` / `onPluginDeepLink()` / `usePluginDeepLink()`
 - `useHostTheme()`
 - `useHostEvent()`
 - `pickHostFile()`
@@ -123,6 +129,28 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `log()` / `createPluginLogger()`
 
 The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
+
+### Plugin deep links
+
+HaloForge can route plugin-scoped launch URLs to installed plugins:
+
+```text
+haloforge://plugin/dev.haloforge.switchboard/v1/import?source=https%3A%2F%2Fexample.com%2Fswitchboard.json
+```
+
+The host opens the matching plugin module first, then the SDK delivers a `PluginDeepLink` with `pluginId`, `route`, `url`, `params`, and `receivedAt`. Plugins decide whether to handle the route:
+
+```tsx
+import { onPluginDeepLink } from "@haloforge/plugin-sdk";
+
+const unsubscribe = onPluginDeepLink((link) => {
+  if (link.route === "/v1/import") {
+    console.log(link.params.source);
+  }
+});
+```
+
+React components can use `usePluginDeepLink(handler)` instead. After a one-shot import succeeds, call `clearPendingPluginDeepLink()` so the same pending link is not replayed after remount.
 
 ### Managed image gateway
 

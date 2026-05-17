@@ -177,6 +177,7 @@ For host-owned file pickers and AI transport helpers, the SDK also exports:
 - `pickHostFile()`
 - `pickHostDirectory()`
 - `saveHostFile()`
+- `usePluginDeepLink()` / `onPluginDeepLink()`
 - `useHostAI().createSession(...)`
 - `useHostAI().getStreamState(...)`
 - `log()` and `createPluginLogger()`

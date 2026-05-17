@@ -3,6 +3,8 @@ import type {
   EnterpriseGatewayApi,
   GatewayImageGenerationResult,
   GatewayOutputAssetList,
+  PluginDeepLink,
+  PluginDeepLinkApi,
   PluginGatewayImageEditRequest,
   PluginGatewayImageRequest,
 } from "./types";
@@ -71,6 +73,14 @@ export async function invokeHost<T = unknown>(
 
 interface HaloForgePluginHostBridge {
   version: 1;
+  deepLinks?: {
+    getPending: (pluginId?: string) => PluginDeepLink | null;
+    clearPending: (pluginId?: string) => void;
+    onOpen: (
+      pluginId: string,
+      handler: (request: PluginDeepLink) => void,
+    ) => () => void;
+  };
   enterpriseGateway?: {
     generateImages: (
       pluginId: string,
@@ -107,6 +117,45 @@ function requireEnterpriseGateway() {
     throw new Error("[plugin-sdk] enterpriseGateway: host managed image gateway bridge is unavailable.");
   }
   return gateway;
+}
+
+function requireDeepLinks() {
+  const deepLinks = getPluginHostBridge()?.deepLinks;
+  if (!deepLinks) {
+    throw new Error("[plugin-sdk] pluginDeepLinks: host deep link bridge is unavailable.");
+  }
+  return deepLinks;
+}
+
+/**
+ * Subscribe to `haloforge://plugin/<plugin-id>/...` launch URLs routed to this plugin.
+ *
+ * The host opens the target plugin module first, then delivers the URL through this
+ * SDK surface. Plugins may ignore this helper when they do not support imports or
+ * other external launch actions.
+ */
+export function pluginDeepLinks(): PluginDeepLinkApi {
+  const pluginId = requireCurrentPluginId("pluginDeepLinks");
+  const deepLinks = requireDeepLinks();
+  return {
+    getPending: () => deepLinks.getPending(pluginId),
+    clearPending: () => deepLinks.clearPending(pluginId),
+    onOpen: (handler) => deepLinks.onOpen(pluginId, handler),
+  };
+}
+
+export function getPendingPluginDeepLink(): PluginDeepLink | null {
+  return pluginDeepLinks().getPending();
+}
+
+export function clearPendingPluginDeepLink(): void {
+  pluginDeepLinks().clearPending();
+}
+
+export function onPluginDeepLink(
+  handler: (link: PluginDeepLink) => void,
+): () => void {
+  return pluginDeepLinks().onOpen(handler);
 }
 
 /**

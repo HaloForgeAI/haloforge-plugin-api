@@ -66,6 +66,8 @@ pub enum Permission {
     /// Call managed image gateway endpoints through the host session.
     #[serde(rename = "host_enterprise_gateway_access")]
     HostEnterpriseGatewayAccess,
+    /// Receive plugin-scoped haloforge:// deep links routed by the host.
+    HostDeepLinks,
     /// Read the active host theme and design tokens.
     HostThemeRead,
     /// Subscribe to stable host events exposed to plugins.
@@ -118,6 +120,7 @@ const PERMISSION_SCHEMAS: &[PermissionSchema] = &[
     PermissionSchema { type_name: "host_file_dialogs", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: HOST_AICHAT_ACCESS_PERMISSION, value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: HOST_ENTERPRISE_GATEWAY_ACCESS_PERMISSION, value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_deep_links", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_theme_read", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_event_subscribe", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "app_config_read", value_shape: PermissionValueShape::None },
@@ -145,6 +148,7 @@ impl Permission {
             | Self::HostFileDialogs
             | Self::HostAIChatAccess
             | Self::HostEnterpriseGatewayAccess
+            | Self::HostDeepLinks
             | Self::HostEventSubscribe => PermissionTier::Standard,
 
             Self::FilesystemRead
@@ -189,6 +193,7 @@ impl Permission {
             Self::HostFileDialogs           => "Open HaloForge file and directory dialogs".into(),
             Self::HostAIChatAccess          => "Use HaloForge AI models and chat transport".into(),
             Self::HostEnterpriseGatewayAccess => "Use HaloForge managed image gateway through the host session".into(),
+            Self::HostDeepLinks             => "Receive HaloForge deep links routed to this plugin".into(),
             Self::HostThemeRead             => "Read HaloForge theme tokens".into(),
             Self::HostEventSubscribe        => "Subscribe to HaloForge host events".into(),
             Self::AppConfigRead             => "Read app configuration".into(),
@@ -325,5 +330,13 @@ mod tests {
             "type": HOST_ENTERPRISE_GATEWAY_ACCESS_PERMISSION
         }))
         .expect("host enterprise gateway permission should be valid");
+    }
+
+    #[test]
+    fn validates_deep_links_host_permission() {
+        validate_manifest_permission_json(&json!({
+            "type": "host_deep_links"
+        }))
+        .expect("host deep links permission should be valid");
     }
 }

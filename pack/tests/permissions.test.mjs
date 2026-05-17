@@ -64,6 +64,19 @@ test("hf-pack check accepts host_enterprise_gateway_access", async () => {
   );
 });
 
+test("hf-pack check accepts plugin deep link host capability and permission", async () => {
+  await withPluginDir(
+    {
+      ...BASE_MANIFEST,
+      host_capabilities: ["deep_links"],
+      permissions: [{ type: "host_deep_links" }],
+    },
+    async (pluginDir) => {
+      await assert.doesNotReject(() => checkPlugin(pluginDir));
+    },
+  );
+});
+
 test("hf-pack check rejects host_a_i_chat_access with a direct hint", async () => {
   await withPluginDir(
     {

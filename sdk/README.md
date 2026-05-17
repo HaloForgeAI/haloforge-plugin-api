@@ -40,6 +40,7 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `registerPlugin`: register the bundle with HaloForge's runtime registry.
 - `invokePlugin`: call commands exposed by your Rust backend.
 - `useHostNavigation`, `useHostFileIntent`, `useHostModels`, `useHostAI`: stable host integration hooks for black-box-compatible plugins.
+- `pluginDeepLinks`, `onPluginDeepLink`, `usePluginDeepLink`: receive plugin-scoped `haloforge://` launch URLs such as import links.
 - `pickHostFile`, `pickHostDirectory`, `saveHostFile`: stable host file dialog helpers.
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
 - `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
@@ -53,6 +54,7 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 
 - `useHostNavigation()` for module switches and settings tabs
 - `useHostFileIntent()` for startup/external file-open intents
+- `pluginDeepLinks()` / `usePluginDeepLink()` for plugin-scoped `haloforge://` launch URLs
 - `pickHostFile()` / `pickHostDirectory()` / `saveHostFile()` for host-owned file dialogs
 - `useHostModels()` / `useAvailableModels()` for model lists and current selection
 - `useHostAI()` for AI transport, session creation, stream-state polling, and generation stop
@@ -62,6 +64,47 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `log()` / `createPluginLogger()` for app-level plugin diagnostics
 
 These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
+
+## Plugin Deep Links
+
+Plugins can opt in to launch URLs such as:
+
+```text
+haloforge://plugin/dev.haloforge.switchboard/v1/import?source=https%3A%2F%2Fexample.com%2Fswitchboard.json
+```
+
+Declare the host capability and permission in `manifest.json`:
+
+```json
+{
+  "host_capabilities": ["deep_links"],
+  "permissions": [
+    { "type": "host_deep_links" }
+  ]
+}
+```
+
+Then consume the link through the SDK:
+
+```tsx
+import { useCallback } from "react";
+import { clearPendingPluginDeepLink, usePluginDeepLink } from "@haloforge/plugin-sdk";
+
+export function SwitchboardPanel() {
+  usePluginDeepLink(useCallback((link) => {
+    if (link.route === "/v1/import") {
+      const source = link.params.source;
+      // Import your data here.
+      console.log("Import switchboard from", source);
+      clearPendingPluginDeepLink();
+    }
+  }, []));
+
+  return null;
+}
+```
+
+Plugins that do not call these helpers simply ignore deep links routed to them.
 
 ## Managed Image Gateway
 

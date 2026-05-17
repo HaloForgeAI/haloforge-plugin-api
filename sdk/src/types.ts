@@ -69,6 +69,22 @@ export interface HostFileIntent {
   metadata?: Record<string, unknown>;
 }
 
+// ─── Deep links ──────────────────────────────────────────────────────────────
+
+export interface PluginDeepLink {
+  pluginId: string;
+  route: string;
+  url: string;
+  params: Record<string, string>;
+  receivedAt: string;
+}
+
+export interface PluginDeepLinkApi {
+  getPending: () => PluginDeepLink | null;
+  clearPending: () => void;
+  onOpen: (handler: (link: PluginDeepLink) => void) => () => void;
+}
+
 export interface HostFileDialogOptions {
   title?: string;
   directory?: string;

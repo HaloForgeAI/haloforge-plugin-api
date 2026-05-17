@@ -103,6 +103,7 @@ pub enum HostCapability {
     #[serde(rename = "aichat")]
     AiChat,
     EnterpriseGateway,
+    DeepLinks,
     ThemeRead,
     EventSubscribe,
 }
@@ -116,6 +117,7 @@ impl HostCapability {
             Self::FileDialogs => "file_dialogs",
             Self::AiChat => "aichat",
             Self::EnterpriseGateway => "enterprise_gateway",
+            Self::DeepLinks => "deep_links",
             Self::ThemeRead => "theme_read",
             Self::EventSubscribe => "event_subscribe",
         }
@@ -331,6 +333,7 @@ mod tests {
     fn host_capability_names_are_stable() {
         assert_eq!(HostCapability::FileIntents.as_str(), "file_intents");
         assert_eq!(HostCapability::FileDialogs.as_str(), "file_dialogs");
+        assert_eq!(HostCapability::DeepLinks.as_str(), "deep_links");
         assert_eq!(HostCapability::ThemeRead.as_str(), "theme_read");
     }
 }

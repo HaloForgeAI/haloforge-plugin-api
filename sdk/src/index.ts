@@ -36,7 +36,17 @@ export { definePlugin, defineModulePlugin, defineAssistantPlugin, registerPlugin
 export type { PluginDefinition, FeaturePluginOptions, ModulePluginOptions, AssistantPluginOptions } from "./types";
 
 // IPC
-export { enterpriseGateway, invokePlugin, invokeOtherPlugin, invokeHost, _setPluginId } from "./ipc";
+export {
+  enterpriseGateway,
+  pluginDeepLinks,
+  getPendingPluginDeepLink,
+  clearPendingPluginDeepLink,
+  onPluginDeepLink,
+  invokePlugin,
+  invokeOtherPlugin,
+  invokeHost,
+  _setPluginId,
+} from "./ipc";
 
 // Components
 export { AppSelect } from "./components/AppSelect";
@@ -53,6 +63,7 @@ export {
   useHostTheme,
   useHostAppState,
   useHostNavigation,
+  usePluginDeepLink,
   useHostFileIntent,
   useHostModels,
   useAvailableModels,
@@ -79,6 +90,8 @@ export type {
   UseHostDataReturn,
   HostDataResource,
   HostNavigationApi,
+  PluginDeepLink,
+  PluginDeepLinkApi,
   HostFileDialogOptions,
   HostFileIntent,
   UseHostFileIntentReturn,

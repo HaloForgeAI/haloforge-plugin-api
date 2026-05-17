@@ -8,7 +8,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { _getPluginId, invokeHost } from "./ipc";
+import { _getPluginId, invokeHost, pluginDeepLinks } from "./ipc";
 import type {
   AppTheme,
   HostAIRequest,
@@ -17,6 +17,7 @@ import type {
   HostFileIntent,
   HostNavigationApi,
   NotifyOptions,
+  PluginDeepLink,
   PluginLogger,
   PluginLogLevel,
   PluginLogOptions,
@@ -394,6 +395,41 @@ export function useHostFileIntent(): UseHostFileIntentReturn {
     setIntent: setPendingFileIntent,
     consume: clearPendingFileIntent,
   };
+}
+
+export function usePluginDeepLink(
+  handler?: (link: PluginDeepLink) => void,
+): PluginDeepLink | null {
+  const [pending, setPending] = useState<PluginDeepLink | null>(() => {
+    try {
+      return pluginDeepLinks().getPending();
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    let api: ReturnType<typeof pluginDeepLinks>;
+    try {
+      api = pluginDeepLinks();
+    } catch (error) {
+      console.warn("[plugin-sdk] usePluginDeepLink unavailable:", error);
+      return;
+    }
+
+    const current = api.getPending();
+    setPending(current);
+    if (current && handler) {
+      handler(current);
+    }
+
+    return api.onOpen((link) => {
+      setPending(link);
+      handler?.(link);
+    });
+  }, [handler]);
+
+  return pending;
 }
 
 export function useHostModels<TModel = Record<string, unknown>>(): UseHostModelsReturn<TModel> {

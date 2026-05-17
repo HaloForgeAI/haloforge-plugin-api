@@ -414,6 +414,7 @@ const PERMISSION_SCHEMAS = new Map<string, { value: "none" | "string" | "string-
   ["host_file_dialogs", { value: "none" }],
   [HOST_AICHAT_ACCESS_PERMISSION, { value: "none" }],
   ["host_enterprise_gateway_access", { value: "none" }],
+  ["host_deep_links", { value: "none" }],
   ["host_theme_read", { value: "none" }],
   ["host_event_subscribe", { value: "none" }],
   ["app_config_read", { value: "none" }],
@@ -1345,6 +1346,7 @@ const HOST_CAPABILITIES = new Set([
   "file_dialogs",
   "aichat",
   "enterprise_gateway",
+  "deep_links",
   "theme_read",
   "event_subscribe",
 ]);
