@@ -130,3 +130,13 @@ The SDK may still adapt to HaloForge's current bridge internally, but plugin cod
 Those warnings are there to keep plugins aligned with the public SDK and improve long-term black-box compatibility.
 
 They now also warn on direct `plugin_invoke` usage so plugin frontends are nudged toward `invokePlugin()` / `invokeOtherPlugin()` instead of hand-built wire names.
+
+After packaging, use the HaloForge `hf` CLI to install into a local workspace:
+
+```bash
+cd /path/to/HaloForge
+npm run hf -- plugin install local /path/to/plugin/dist/package/<plugin-id>-<version>.hfpkg --json
+npm run hf -- plugin list --json
+```
+
+On Windows installed builds, `hf` is added to PATH and can be run directly from a new terminal. macOS automatic PATH linking is not implemented yet; run `command -v hf` before assuming the global command exists.
