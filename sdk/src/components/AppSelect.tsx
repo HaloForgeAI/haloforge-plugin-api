@@ -156,15 +156,19 @@ export function AppSelect({
           open && "border-primary/45 bg-surface/85 shadow-[0_16px_36px_-24px] shadow-black/70",
           className,
         )}
+        style={{ paddingRight: "2.5rem" }}
       >
         <span className="min-w-0 flex-1 truncate">
           {selectedOption?.label ?? <span className="text-foreground-secondary/60">&nbsp;</span>}
         </span>
         <ChevronDown
           size={14}
-          className="pointer-events-none shrink-0 text-foreground-secondary/60"
+          className="pointer-events-none text-foreground-secondary/60"
           style={{
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            position: "absolute",
+            right: 12,
+            top: "50%",
+            transform: open ? "translateY(-50%) rotate(180deg)" : "translateY(-50%) rotate(0deg)",
             transition: "transform 180ms ease",
           }}
         />

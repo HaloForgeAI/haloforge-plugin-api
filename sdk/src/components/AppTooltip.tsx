@@ -5,7 +5,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
 
 export type AppTooltipPlacement = "top" | "bottom" | "left" | "right";
 
@@ -125,11 +124,10 @@ export function AppTooltip({
       style={{ display: "inline-flex" }}
     >
       {children}
-      {active && createPortal(
+      {active && (
         <div ref={tooltipRef} role="tooltip" className={cx("hf-app-tooltip", tooltipClassName)} style={tooltipStyle}>
           {content}
-        </div>,
-        document.body,
+        </div>
       )}
     </span>
   );
