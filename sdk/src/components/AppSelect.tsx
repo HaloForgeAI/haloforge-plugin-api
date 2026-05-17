@@ -85,17 +85,28 @@ export function AppSelect({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const suppressNextToggleRef = useRef(false);
+  const pointerCommittedRef = useRef(false);
+  const guardTimerRef = useRef<number | null>(null);
 
   const options = useMemo(() => parseOptions(children), [children]);
   const normalizedValue = String(value ?? "");
   const selectedOption = options.find((option) => option.value === normalizedValue) ?? options[0] ?? null;
 
   useEffect(() => {
+    return () => {
+      if (guardTimerRef.current != null) {
+        window.clearTimeout(guardTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
 
-    function handlePointerDown(event: MouseEvent) {
+    function handlePointerDown(event: PointerEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
       }
@@ -108,18 +119,27 @@ export function AppSelect({
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleEscape);
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleEscape);
     };
   }, [open]);
 
   function commit(nextValue: string) {
+    suppressNextToggleRef.current = true;
     onChange?.({ target: { value: nextValue } });
     setOpen(false);
-    buttonRef.current?.focus();
+    buttonRef.current?.focus({ preventScroll: true });
+    if (guardTimerRef.current != null) {
+      window.clearTimeout(guardTimerRef.current);
+    }
+    guardTimerRef.current = window.setTimeout(() => {
+      suppressNextToggleRef.current = false;
+      pointerCommittedRef.current = false;
+      guardTimerRef.current = null;
+    }, 220);
   }
 
   return (
@@ -134,10 +154,15 @@ export function AppSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={disabled}
-        onClick={() => {
-          if (!disabled) {
-            setOpen((current) => !current);
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (disabled) return;
+          if (suppressNextToggleRef.current) {
+            suppressNextToggleRef.current = false;
+            return;
           }
+          setOpen((current) => !current);
         }}
         onKeyDown={(event) => {
           if (disabled) {
@@ -192,7 +217,22 @@ export function AppSelect({
                   role="option"
                   aria-selected={selected}
                   disabled={option.disabled}
-                  onClick={() => commit(option.value)}
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (option.disabled) return;
+                    pointerCommittedRef.current = true;
+                    commit(option.value);
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (option.disabled || pointerCommittedRef.current) {
+                      pointerCommittedRef.current = false;
+                      return;
+                    }
+                    commit(option.value);
+                  }}
                   data-selected={selected ? "true" : undefined}
                   className={cx(
                     "hf-menu-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors",
