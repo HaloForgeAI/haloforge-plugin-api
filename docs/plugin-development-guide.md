@@ -61,10 +61,10 @@ Every plugin needs a `manifest.json` at the repository root.
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.1.0",
-    "min_host_api_version": "0.2.4"
+    "min_host_api_version": "0.2.10"
   },
   "capability_levels": [0],
-  "host_capabilities": ["theme_read"],
+  "host_capabilities": ["navigation", "file_intents", "theme_read"],
   "integration": {
     "level0": {
       "module_id": "my-plugin",
@@ -74,6 +74,22 @@ Every plugin needs a `manifest.json` at the repository root.
       "sidebar_order": 120,
       "panel_entry": "app/dist/index.js"
     }
+  },
+  "window": {
+    "preferred_role": "document",
+    "default_open_mode": "reuse_or_new",
+    "reuse_key": "resource",
+    "allow_multiple": true,
+    "document_handlers": [
+      {
+        "id": "markdown",
+        "label": "Markdown",
+        "extensions": [".md", ".markdown"],
+        "mime_types": ["text/markdown"],
+        "route": "/document",
+        "resource_param": "path"
+      }
+    ]
   },
   "entry": {
     "native": {
@@ -103,6 +119,18 @@ Rules:
 - `permissions` must be the smallest set needed.
 - `entry.frontend` and `integration.*.panel_entry` should point to the built bundle.
 - Native command IDs in `commands` must match the names registered by the Rust backend before SDK prefixing.
+
+### Window policy
+
+Plugins can declare a `window` block when their routes or resources should participate in HaloForge's multi-window dispatcher.
+
+- `preferred_role`: requested host role for new windows, such as `main`, `document`, `agent`, `chat`, `devkit`, or `settings`.
+- `default_open_mode`: `smart`, `current`, `new_window`, `reuse_existing`, or `reuse_or_new`.
+- `reuse_key`: `plugin`, `route`, `resource`, or `none`.
+- `allow_multiple`: whether the plugin can have multiple windows at once.
+- `document_handlers`: file/resource handlers that map extensions or MIME types into plugin routes.
+
+The host still owns actual window creation, focus, session restore, and safety checks. The plugin declares intent; HaloForge decides the final target window.
 
 ## Rust Backend
 

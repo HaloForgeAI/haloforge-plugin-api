@@ -36,7 +36,23 @@ Plugins can now declare:
     "deep_links",
     "theme_read",
     "event_subscribe"
-  ]
+  ],
+  "window": {
+    "preferred_role": "document",
+    "default_open_mode": "reuse_or_new",
+    "reuse_key": "resource",
+    "allow_multiple": true,
+    "document_handlers": [
+      {
+        "id": "markdown",
+        "label": "Markdown",
+        "extensions": [".md", ".markdown"],
+        "mime_types": ["text/markdown"],
+        "route": "/document",
+        "resource_param": "path"
+      }
+    ]
+  }
 }
 ```
 
@@ -53,6 +69,18 @@ Plugins can now declare:
 - `event_subscribe`
 
 These declarations are meant to describe which stable host features the plugin expects through the public SDK layer.
+
+### Window policy
+
+The optional `window` block lets plugins describe how the host should open plugin routes and resources in a multi-window HaloForge session.
+
+- `preferred_role`: requested window role, for example `main`, `document`, `agent`, `chat`, `devkit`, or `settings`.
+- `default_open_mode`: `smart`, `current`, `new_window`, `reuse_existing`, or `reuse_or_new`.
+- `reuse_key`: `plugin`, `route`, `resource`, or `none`.
+- `allow_multiple`: whether more than one window can show this plugin.
+- `document_handlers`: extension/MIME handlers that route files or resources into plugin pages.
+
+This is declarative only. The host still owns actual window creation, focus, restore, and conflict handling.
 
 ## Rust crate
 

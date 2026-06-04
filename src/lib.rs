@@ -4,14 +4,17 @@ pub mod permissions;
 pub mod types;
 
 pub use error::PluginError;
-pub use manifest::{CapabilityLevel, HostCapability, IntegrationConfig, PluginManifest};
+pub use manifest::{
+    CapabilityLevel, DocumentHandlerConfig, HostCapability, IntegrationConfig, PluginManifest,
+    WindowPolicyConfig,
+};
 pub use permissions::Permission;
 pub use types::*;
 
 /// The stable ABI version of this plugin API.
 /// Increment MAJOR on any breaking change to the HaloForgePlugin trait or context traits.
 pub const PLUGIN_ABI_VERSION: u32 = 1;
-pub const PUBLIC_HOST_API_VERSION: &str = "0.1.0";
+pub const PUBLIC_HOST_API_VERSION: &str = "0.2.10";
 
 // ─── The core plugin trait ────────────────────────────────────────────────────
 

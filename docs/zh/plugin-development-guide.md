@@ -61,10 +61,10 @@ my-plugin/
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.1.0",
-    "min_host_api_version": "0.2.4"
+    "min_host_api_version": "0.2.10"
   },
   "capability_levels": [0],
-  "host_capabilities": ["theme_read"],
+  "host_capabilities": ["navigation", "file_intents", "theme_read"],
   "integration": {
     "level0": {
       "module_id": "my-plugin",
@@ -74,6 +74,22 @@ my-plugin/
       "sidebar_order": 120,
       "panel_entry": "app/dist/index.js"
     }
+  },
+  "window": {
+    "preferred_role": "document",
+    "default_open_mode": "reuse_or_new",
+    "reuse_key": "resource",
+    "allow_multiple": true,
+    "document_handlers": [
+      {
+        "id": "markdown",
+        "label": "Markdown",
+        "extensions": [".md", ".markdown"],
+        "mime_types": ["text/markdown"],
+        "route": "/document",
+        "resource_param": "path"
+      }
+    ]
   },
   "entry": {
     "native": {
@@ -103,6 +119,18 @@ my-plugin/
 - `permissions` 必须保持最小权限。
 - `entry.frontend` 和 `integration.*.panel_entry` 应指向构建后的 bundle。
 - `commands` 里的原生命令 ID 要和 Rust 后端注册的名字一致，不能包含 SDK 自动添加的前缀。
+
+### 窗口策略
+
+插件如果希望自己的路由或资源进入 HaloForge 多窗口分发，可以在 manifest 里声明 `window` 配置。
+
+- `preferred_role`：新窗口偏好的宿主 role，例如 `main`、`document`、`agent`、`chat`、`devkit` 或 `settings`。
+- `default_open_mode`：`smart`、`current`、`new_window`、`reuse_existing` 或 `reuse_or_new`。
+- `reuse_key`：`plugin`、`route`、`resource` 或 `none`。
+- `allow_multiple`：是否允许同一插件同时存在多个窗口。
+- `document_handlers`：把扩展名或 MIME 类型映射到插件 route 的文件/资源 handler。
+
+真正的窗口创建、聚焦、session restore 和安全检查仍由宿主执行。插件只声明意图，HaloForge 决定最终落到哪个窗口。
 
 ## Rust 后端
 

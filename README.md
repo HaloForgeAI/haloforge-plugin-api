@@ -86,6 +86,22 @@ Permission names are strict. For AI Chat access, the only valid manifest permiss
             "slots": ["devkit.toolbar"]
         }
     },
+    "window": {
+        "preferred_role": "document",
+        "default_open_mode": "reuse_or_new",
+        "reuse_key": "resource",
+        "allow_multiple": true,
+        "document_handlers": [
+            {
+                "id": "markdown",
+                "label": "Markdown",
+                "extensions": [".md", ".markdown"],
+                "mime_types": ["text/markdown"],
+                "route": "/document",
+                "resource_param": "path"
+            }
+        ]
+    },
     "entry": {
         "native": {
             "windows_x64": "native/hello_plugin.dll",

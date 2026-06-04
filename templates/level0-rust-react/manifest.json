@@ -10,11 +10,11 @@
   "keywords": ["haloforge", "plugin", "template"],
   "compatibility": {
     "min_app_version": "0.1.0",
-    "min_host_api_version": "0.2.4",
+    "min_host_api_version": "0.2.10",
     "platforms": ["windows", "macos", "linux"]
   },
   "capability_levels": [0],
-  "host_capabilities": ["theme_read"],
+  "host_capabilities": ["navigation", "theme_read"],
   "integration": {
     "level0": {
       "module_id": "template-plugin",
@@ -24,6 +24,12 @@
       "sidebar_order": 120,
       "panel_entry": "app/dist/index.js"
     }
+  },
+  "window": {
+    "preferred_role": "main",
+    "default_open_mode": "reuse_or_new",
+    "reuse_key": "route",
+    "allow_multiple": true
   },
   "entry": {
     "native": {

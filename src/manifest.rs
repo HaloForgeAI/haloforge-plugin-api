@@ -31,6 +31,10 @@ pub struct PluginManifest {
     #[serde(default)]
     pub integration: IntegrationConfig,
 
+    /// Declarative host window policy for plugin routes and file/resource handlers.
+    #[serde(default)]
+    pub window: WindowPolicyConfig,
+
     /// Entry points for native library and frontend bundle.
     #[serde(default)]
     pub entry: EntryConfig,
@@ -156,6 +160,67 @@ pub struct IntegrationConfig {
     pub level3: Option<Level3Config>,
     #[serde(default)]
     pub level4: Option<Level4Config>,
+}
+
+/// Declarative window behavior requested by a plugin.
+///
+/// The host owns actual window creation and decides whether a request is allowed,
+/// but these fields let a plugin describe how its routes and resources should be
+/// opened when invoked from menus, deeplinks, file associations, or other plugins.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct WindowPolicyConfig {
+    /// Preferred host role for new windows: "main", "document", "agent", "chat",
+    /// "devkit", "settings", or a future host-recognized role.
+    #[serde(default)]
+    pub preferred_role: Option<String>,
+    /// Default open behavior for plugin routes: "smart", "current", "new_window",
+    /// "reuse_existing", or "reuse_or_new".
+    #[serde(default)]
+    pub default_open_mode: Option<String>,
+    /// Default reuse key: "plugin", "route", "resource", or "none".
+    #[serde(default)]
+    pub reuse_key: Option<String>,
+    /// Whether this plugin may have more than one window at the same time.
+    /// Omitted means the host default is used.
+    #[serde(default)]
+    pub allow_multiple: Option<bool>,
+    /// File/resource handlers declared by this plugin.
+    #[serde(default)]
+    pub document_handlers: Vec<DocumentHandlerConfig>,
+}
+
+/// File or resource entry point that can be routed into a plugin panel.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DocumentHandlerConfig {
+    /// Stable handler id, unique within the plugin. Defaults to the route when omitted.
+    #[serde(default)]
+    pub id: Option<String>,
+    /// User-facing handler label, used in menus and open-with UI.
+    #[serde(default)]
+    pub label: Option<String>,
+    /// Lowercase extensions including the leading dot, for example [".md"].
+    #[serde(default)]
+    pub extensions: Vec<String>,
+    /// MIME types handled by this plugin.
+    #[serde(default)]
+    pub mime_types: Vec<String>,
+    /// Plugin route opened for this resource.
+    pub route: String,
+    /// Query parameter that receives the resource path/URI. Defaults to "path".
+    #[serde(default)]
+    pub resource_param: Option<String>,
+    /// Handler-specific open behavior; falls back to the plugin window policy.
+    #[serde(default)]
+    pub open_mode: Option<String>,
+    /// Handler-specific reuse key; falls back to the plugin window policy.
+    #[serde(default)]
+    pub reuse_key: Option<String>,
+    /// Handler-specific preferred role; falls back to the plugin window policy.
+    #[serde(default)]
+    pub preferred_role: Option<String>,
+    /// Handler-specific multiple-window allowance; falls back to the plugin policy.
+    #[serde(default)]
+    pub allow_multiple: Option<bool>,
 }
 
 /// Level 0 — The plugin adds a new top-level module to the sidebar.
@@ -327,6 +392,61 @@ mod tests {
             manifest.host_capabilities,
             vec![HostCapability::Navigation, HostCapability::AiChat]
         );
+    }
+
+    #[test]
+    fn manifest_supports_window_policy_document_handlers() {
+        let manifest: PluginManifest = serde_json::from_value(serde_json::json!({
+            "id": "dev.haloforge.markdown",
+            "name": "Markdown",
+            "version": "0.2.10",
+            "description": "Markdown plugin",
+            "author": "HaloForge Team",
+            "compatibility": {
+                "min_app_version": "0.7.0",
+                "min_host_api_version": "0.2.10",
+                "platforms": ["windows", "macos", "linux"]
+            },
+            "capability_levels": [0],
+            "host_capabilities": ["navigation", "file_intents"],
+            "integration": {
+                "level0": {
+                    "module_id": "markdown",
+                    "module_label": "Markdown",
+                    "module_icon": "FileText",
+                    "panel_entry": "app/dist/index.js"
+                }
+            },
+            "window": {
+                "preferred_role": "document",
+                "default_open_mode": "reuse_or_new",
+                "reuse_key": "resource",
+                "allow_multiple": true,
+                "document_handlers": [{
+                    "id": "markdown",
+                    "label": "Markdown",
+                    "extensions": [".md", ".markdown"],
+                    "mime_types": ["text/markdown"],
+                    "route": "/document",
+                    "resource_param": "path"
+                }]
+            }
+        }))
+        .expect("manifest should deserialize");
+
+        assert_eq!(manifest.window.preferred_role.as_deref(), Some("document"));
+        assert_eq!(manifest.window.default_open_mode.as_deref(), Some("reuse_or_new"));
+        assert_eq!(manifest.window.reuse_key.as_deref(), Some("resource"));
+        assert_eq!(manifest.window.allow_multiple, Some(true));
+        let handler = manifest
+            .window
+            .document_handlers
+            .first()
+            .expect("document handler should deserialize");
+        assert_eq!(handler.extensions, vec![".md", ".markdown"]);
+        assert_eq!(handler.mime_types, vec!["text/markdown"]);
+        assert_eq!(handler.route, "/document");
+        assert_eq!(handler.resource_param.as_deref(), Some("path"));
     }
 
     #[test]

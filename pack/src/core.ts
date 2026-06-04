@@ -38,6 +38,24 @@ export interface Manifest {
   };
   capability_levels: number[];
   host_capabilities?: string[];
+  window?: {
+    preferred_role?: string;
+    default_open_mode?: string;
+    reuse_key?: string;
+    allow_multiple?: boolean;
+    document_handlers?: Array<{
+      id?: string;
+      label?: string;
+      extensions?: string[];
+      mime_types?: string[];
+      route: string;
+      resource_param?: string;
+      open_mode?: string;
+      reuse_key?: string;
+      preferred_role?: string;
+      allow_multiple?: boolean;
+    }>;
+  };
   entry?: {
     native?: Record<string, string>;
     frontend?: string;
@@ -367,6 +385,7 @@ function validateManifest(manifest: Manifest): void {
   }
 
   validateManifestPermissions(manifest.permissions);
+  validateManifestWindowPolicy(manifest.window);
 
   const frontendPath = manifest.entry?.frontend;
   const stylesPath = manifest.entry?.frontend_styles;
@@ -382,6 +401,101 @@ function validateManifest(manifest: Manifest): void {
     for (const [field, value] of Object.entries(manifest.entry.native)) {
       requireRelativePath(value, `manifest.entry.native.${field}`);
     }
+  }
+}
+
+function validateManifestWindowPolicy(rawWindow: unknown): void {
+  if (rawWindow === undefined) {
+    return;
+  }
+  if (!isPlainObject(rawWindow)) {
+    throw new Error("manifest.window must be an object when provided");
+  }
+
+  const windowPolicy = rawWindow as JsonObject;
+  validateOptionalString(windowPolicy.preferred_role, "manifest.window.preferred_role");
+  validateOptionalWindowOpenMode(windowPolicy.default_open_mode, "manifest.window.default_open_mode");
+  validateOptionalWindowReuseKey(windowPolicy.reuse_key, "manifest.window.reuse_key");
+  validateOptionalBoolean(windowPolicy.allow_multiple, "manifest.window.allow_multiple");
+
+  if (windowPolicy.document_handlers === undefined) {
+    return;
+  }
+  if (!Array.isArray(windowPolicy.document_handlers)) {
+    throw new Error("manifest.window.document_handlers must be an array when provided");
+  }
+
+  for (const [index, rawHandler] of windowPolicy.document_handlers.entries()) {
+    validateManifestDocumentHandler(rawHandler, index);
+  }
+}
+
+function validateManifestDocumentHandler(rawHandler: unknown, index: number): void {
+  const base = `manifest.window.document_handlers[${index}]`;
+  if (!isPlainObject(rawHandler)) {
+    throw new Error(`${base} must be an object`);
+  }
+
+  const handler = rawHandler as JsonObject;
+  validateOptionalString(handler.id, `${base}.id`);
+  validateOptionalString(handler.label, `${base}.label`);
+  requireString(handler.route, `${base}.route`);
+  validateOptionalString(handler.resource_param, `${base}.resource_param`);
+  validateOptionalWindowOpenMode(handler.open_mode, `${base}.open_mode`);
+  validateOptionalWindowReuseKey(handler.reuse_key, `${base}.reuse_key`);
+  validateOptionalString(handler.preferred_role, `${base}.preferred_role`);
+  validateOptionalBoolean(handler.allow_multiple, `${base}.allow_multiple`);
+
+  const extensions = validateOptionalStringArray(handler.extensions, `${base}.extensions`);
+  const mimeTypes = validateOptionalStringArray(handler.mime_types, `${base}.mime_types`);
+  if (extensions.length === 0 && mimeTypes.length === 0) {
+    throw new Error(`${base} must declare extensions or mime_types`);
+  }
+}
+
+function validateOptionalString(value: unknown, fieldName: string): void {
+  if (value === undefined) {
+    return;
+  }
+  requireString(value, fieldName);
+}
+
+function validateOptionalBoolean(value: unknown, fieldName: string): void {
+  if (value !== undefined && typeof value !== "boolean") {
+    throw new Error(`${fieldName} must be a boolean`);
+  }
+}
+
+function validateOptionalStringArray(value: unknown, fieldName: string): string[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`${fieldName} must be an array of strings`);
+  }
+  for (const [index, item] of value.entries()) {
+    requireString(item, `${fieldName}[${index}]`);
+  }
+  return value;
+}
+
+function validateOptionalWindowOpenMode(value: unknown, fieldName: string): void {
+  if (value === undefined) {
+    return;
+  }
+  requireString(value, fieldName);
+  if (!WINDOW_OPEN_MODES.has(value)) {
+    throw new Error(`${fieldName} has unsupported open mode '${value}'`);
+  }
+}
+
+function validateOptionalWindowReuseKey(value: unknown, fieldName: string): void {
+  if (value === undefined) {
+    return;
+  }
+  requireString(value, fieldName);
+  if (!WINDOW_REUSE_KEYS.has(value)) {
+    throw new Error(`${fieldName} has unsupported reuse key '${value}'`);
   }
 }
 
@@ -1349,6 +1463,21 @@ const HOST_CAPABILITIES = new Set([
   "deep_links",
   "theme_read",
   "event_subscribe",
+]);
+
+const WINDOW_OPEN_MODES = new Set([
+  "smart",
+  "current",
+  "new_window",
+  "reuse_existing",
+  "reuse_or_new",
+]);
+
+const WINDOW_REUSE_KEYS = new Set([
+  "plugin",
+  "route",
+  "resource",
+  "none",
 ]);
 
 const DIRECT_HOST_IPC_COMMANDS = [

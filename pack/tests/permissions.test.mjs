@@ -77,6 +77,55 @@ test("hf-pack check accepts plugin deep link host capability and permission", as
   );
 });
 
+test("hf-pack check accepts plugin window document handlers", async () => {
+  await withPluginDir(
+    {
+      ...BASE_MANIFEST,
+      host_capabilities: ["navigation", "file_intents"],
+      window: {
+        preferred_role: "document",
+        default_open_mode: "reuse_or_new",
+        reuse_key: "resource",
+        allow_multiple: true,
+        document_handlers: [
+          {
+            id: "markdown",
+            label: "Markdown",
+            extensions: [".md", ".markdown"],
+            mime_types: ["text/markdown"],
+            route: "/document",
+            resource_param: "path",
+          },
+        ],
+      },
+    },
+    async (pluginDir) => {
+      await assert.doesNotReject(() => checkPlugin(pluginDir));
+    },
+  );
+});
+
+test("hf-pack check rejects incomplete plugin window document handlers", async () => {
+  await withPluginDir(
+    {
+      ...BASE_MANIFEST,
+      window: {
+        document_handlers: [
+          {
+            route: "/document",
+          },
+        ],
+      },
+    },
+    async (pluginDir) => {
+      await assert.rejects(
+        () => checkPlugin(pluginDir),
+        /document_handlers\[0\].*extensions or mime_types/u,
+      );
+    },
+  );
+});
+
 test("hf-pack check rejects host_a_i_chat_access with a direct hint", async () => {
   await withPluginDir(
     {
