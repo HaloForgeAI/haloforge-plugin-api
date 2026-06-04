@@ -57,6 +57,7 @@ From the package directory:
 
 ```powershell
 Push-Location "G:\Git\haloforge-plugin-api\sdk"
+npm pack --dry-run
 npm publish --access public
 Pop-Location
 ```
@@ -67,6 +68,7 @@ From the package directory:
 
 ```powershell
 Push-Location "G:\Git\haloforge-plugin-api\pack"
+npm pack --dry-run
 npm publish --access public
 Pop-Location
 ```
