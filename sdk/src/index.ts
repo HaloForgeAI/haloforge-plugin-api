@@ -38,6 +38,7 @@ export type { PluginDefinition, FeaturePluginOptions, ModulePluginOptions, Assis
 // IPC
 export {
   enterpriseGateway,
+  pluginNavigation,
   pluginDeepLinks,
   getPendingPluginDeepLink,
   clearPendingPluginDeepLink,
@@ -63,6 +64,7 @@ export {
   useHostTheme,
   useHostAppState,
   useHostNavigation,
+  usePluginNavigation,
   usePluginDeepLink,
   useHostFileIntent,
   useHostModels,
@@ -90,6 +92,10 @@ export type {
   UseHostDataReturn,
   HostDataResource,
   HostNavigationApi,
+  PluginNavigationApi,
+  PluginNavigationOptions,
+  PluginRouteChange,
+  UsePluginNavigationReturn,
   PluginDeepLink,
   PluginDeepLinkApi,
   HostFileDialogOptions,

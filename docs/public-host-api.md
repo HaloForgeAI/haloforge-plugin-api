@@ -87,6 +87,7 @@ import {
   useHostFileIntent,
   useHostAI,
   usePluginDeepLink,
+  usePluginNavigation,
   useHostTheme,
   enterpriseGateway,
   createPluginLogger,
@@ -95,6 +96,7 @@ import {
 
 function ExamplePanel() {
   const { openSettingsTab } = useHostNavigation();
+  const navigation = usePluginNavigation();
   const { intent, consume } = useHostFileIntent();
   usePluginDeepLink((link) => console.log("Received deep link", link.route, link.params));
   const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
@@ -121,6 +123,7 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `useHostAI()`
 - `enterpriseGateway()`
 - `pluginDeepLinks()` / `onPluginDeepLink()` / `usePluginDeepLink()`
+- `pluginNavigation()` / `usePluginNavigation()`
 - `useHostTheme()`
 - `useHostEvent()`
 - `pickHostFile()`
@@ -129,6 +132,30 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `log()` / `createPluginLogger()`
 
 The SDK may still adapt to HaloForge's current bridge internally, but plugin code no longer needs to know how the host is wired underneath.
+
+### Plugin panel routes
+
+Level 0 plugin panels can synchronize internal pages with HaloForge window Back/Forward:
+
+```tsx
+import { useEffect } from "react";
+import { usePluginNavigation } from "@haloforge/plugin-sdk";
+
+function Panel() {
+  const navigation = usePluginNavigation();
+
+  function openDetail(id: string) {
+    navigation.pushRoute(`/detail/${id}`, { params: { id } });
+  }
+
+  useEffect(() => {
+    const route = navigation.current?.route ?? "/";
+    // Update local tab/router state from host Back/Forward or deep links.
+  }, [navigation.current?.route]);
+}
+```
+
+Use `pushRoute()` for user-visible page changes and `replaceRoute()` for state refinements such as filters. Existing plugins that do not call this API still work, but HaloForge can only restore the plugin module, not its internal page.
 
 ### Plugin deep links
 

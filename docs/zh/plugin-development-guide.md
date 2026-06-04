@@ -179,6 +179,7 @@ export default registerPlugin("dev.example.my-plugin", definePlugin({
 - `usePluginSettings()` 读取宿主管理的插件设置。
 - `useHostAI()` 复用 AIChat transport。
 - `enterpriseGateway()` 调用宿主管理的生图网关。函数名为历史兼容命名，产品 UI 应显示为 “HaloForge Cloud gateway” 或 “managed image gateway”。
+- Level 0 插件面板如果有内部页面，使用 `usePluginNavigation()`。页面级跳转调用 `pushRoute()`，筛选/模式等状态修正用 `replaceRoute()`，并从 `current` 或 `onRouteChange()` 回写本地状态，这样 HaloForge 的后退/前进才能恢复插件内部页面。
 - `AppSelect` 用于 combo box 和下拉框。
 - `pickHostFile()`、`pickHostDirectory()`、`saveHostFile()` 用于宿主文件选择器。
 

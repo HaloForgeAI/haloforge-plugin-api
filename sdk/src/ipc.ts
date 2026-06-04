@@ -7,6 +7,9 @@ import type {
   PluginDeepLinkApi,
   PluginGatewayImageEditRequest,
   PluginGatewayImageRequest,
+  PluginNavigationApi,
+  PluginNavigationOptions,
+  PluginRouteChange,
 } from "./types";
 
 // ─── Plugin-scoped IPC ────────────────────────────────────────────────────────
@@ -81,6 +84,21 @@ interface HaloForgePluginHostBridge {
       handler: (request: PluginDeepLink) => void,
     ) => () => void;
   };
+  navigation?: {
+    getCurrent: (pluginId: string, moduleId?: string | null) => PluginRouteChange | null;
+    pushRoute: (
+      pluginId: string,
+      request: { moduleId?: string | null; route?: string | null; params?: Record<string, string> | null },
+    ) => PluginRouteChange;
+    replaceRoute: (
+      pluginId: string,
+      request: { moduleId?: string | null; route?: string | null; params?: Record<string, string> | null },
+    ) => PluginRouteChange;
+    onRouteChange: (
+      pluginId: string,
+      handler: (request: PluginRouteChange) => void,
+    ) => () => void;
+  };
   enterpriseGateway?: {
     generateImages: (
       pluginId: string,
@@ -127,6 +145,14 @@ function requireDeepLinks() {
   return deepLinks;
 }
 
+function requireNavigation() {
+  const navigation = getPluginHostBridge()?.navigation;
+  if (!navigation) {
+    throw new Error("[plugin-sdk] pluginNavigation: host navigation bridge is unavailable.");
+  }
+  return navigation;
+}
+
 /**
  * Subscribe to `haloforge://plugin/<plugin-id>/...` launch URLs routed to this plugin.
  *
@@ -156,6 +182,30 @@ export function onPluginDeepLink(
   handler: (link: PluginDeepLink) => void,
 ): () => void {
   return pluginDeepLinks().onOpen(handler);
+}
+
+/**
+ * Synchronize a Level 0 plugin panel's internal route with HaloForge window
+ * history. Plugins that keep their own tabs or pages should call `pushRoute`
+ * for user-visible navigation and subscribe to `onRouteChange` to respond to
+ * host Back/Forward.
+ */
+export function pluginNavigation(): PluginNavigationApi {
+  const pluginId = requireCurrentPluginId("pluginNavigation");
+  const navigation = requireNavigation();
+
+  const toRequest = (route: string, options?: PluginNavigationOptions) => ({
+    moduleId: options?.moduleId ?? null,
+    route,
+    params: options?.params ?? null,
+  });
+
+  return {
+    getCurrent: (moduleId) => navigation.getCurrent(pluginId, moduleId),
+    pushRoute: (route, options) => navigation.pushRoute(pluginId, toRequest(route, options)),
+    replaceRoute: (route, options) => navigation.replaceRoute(pluginId, toRequest(route, options)),
+    onRouteChange: (handler) => navigation.onRouteChange(pluginId, handler),
+  };
 }
 
 /**

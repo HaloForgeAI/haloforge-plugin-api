@@ -61,6 +61,30 @@ export interface HostNavigationApi {
   openSettingsTab: (tabId: string) => void;
 }
 
+export interface PluginNavigationOptions {
+  moduleId?: string | null;
+  params?: Record<string, string> | null;
+}
+
+export interface PluginRouteChange {
+  moduleId: string;
+  pluginId: string;
+  route: string;
+  params: Record<string, string>;
+  changedAt: string;
+}
+
+export interface PluginNavigationApi {
+  getCurrent: (moduleId?: string | null) => PluginRouteChange | null;
+  pushRoute: (route: string, options?: PluginNavigationOptions) => PluginRouteChange;
+  replaceRoute: (route: string, options?: PluginNavigationOptions) => PluginRouteChange;
+  onRouteChange: (handler: (change: PluginRouteChange) => void) => () => void;
+}
+
+export interface UsePluginNavigationReturn extends PluginNavigationApi {
+  current: PluginRouteChange | null;
+}
+
 export interface HostFileIntent {
   kind: string;
   path: string;

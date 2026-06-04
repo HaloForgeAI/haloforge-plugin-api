@@ -179,6 +179,7 @@ Use the SDK for host integration:
 - `usePluginSettings()` for host-provided plugin settings.
 - `useHostAI()` for host AI chat transport.
 - `enterpriseGateway()` for the host-managed image gateway. The function name is retained for compatibility, but product UI should call this "HaloForge Cloud gateway" or "managed image gateway".
+- `usePluginNavigation()` for Level 0 plugin panels with internal pages. Call `pushRoute()` on page-level navigation and update local state from `current` or `onRouteChange()` so HaloForge Back/Forward can restore the plugin page.
 - `AppSelect` for combo boxes and dropdowns.
 - `pickHostFile()`, `pickHostDirectory()`, and `saveHostFile()` for host-owned file dialogs.
 

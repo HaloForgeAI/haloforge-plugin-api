@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Blocks, RefreshCw } from "lucide-react";
-import { AppSelect, invokePlugin, useHostTheme } from "@haloforge/plugin-sdk";
+import { AppSelect, invokePlugin, useHostTheme, usePluginNavigation } from "@haloforge/plugin-sdk";
 
 type Locale = "en" | "zh";
 
@@ -42,11 +42,24 @@ function getLocale(): Locale {
 
 export function TemplatePanel() {
   const { theme } = useHostTheme();
+  const navigation = usePluginNavigation();
   const locale = useMemo(getLocale, []);
   const t = STRINGS[locale];
-  const [mode, setMode] = useState("overview");
+  const [mode, setMode] = useState(() => navigation.current?.params.mode ?? "overview");
   const [result, setResult] = useState<string>(t.pending);
   const [busy, setBusy] = useState(false);
+
+  function selectMode(nextMode: string) {
+    setMode(nextMode);
+    navigation.replaceRoute("/", { params: { mode: nextMode } });
+  }
+
+  useEffect(() => {
+    const nextMode = navigation.current?.params.mode;
+    if (nextMode === "overview" || nextMode === "diagnostics") {
+      setMode(nextMode);
+    }
+  }, [navigation.current?.params.mode]);
 
   async function pingBackend() {
     setBusy(true);
@@ -72,7 +85,7 @@ export function TemplatePanel() {
         </div>
         <label className="hftp-select-field">
           <span>{t.mode}</span>
-          <AppSelect value={mode} onChange={(event) => setMode(event.target.value)} className="hftp-select">
+          <AppSelect value={mode} onChange={(event) => selectMode(event.target.value)} className="hftp-select">
             <option value="overview">{t.overview}</option>
             <option value="diagnostics">{t.diagnostics}</option>
           </AppSelect>

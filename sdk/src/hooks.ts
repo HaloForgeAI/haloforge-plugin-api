@@ -8,7 +8,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { _getPluginId, invokeHost, pluginDeepLinks } from "./ipc";
+import { _getPluginId, invokeHost, pluginDeepLinks, pluginNavigation } from "./ipc";
 import type {
   AppTheme,
   HostAIRequest,
@@ -21,11 +21,14 @@ import type {
   PluginLogger,
   PluginLogLevel,
   PluginLogOptions,
+  PluginNavigationOptions,
+  PluginRouteChange,
   UseAppThemeReturn,
   UseHostAIReturn,
   UseHostDataReturn,
   UseHostFileIntentReturn,
   UseHostModelsReturn,
+  UsePluginNavigationReturn,
   UsePluginSettingsReturn,
 } from "./types";
 
@@ -35,6 +38,7 @@ interface PluginRuntimeContextValue {
   pluginId: string;
   slotId: string;
   slotContext: Record<string, unknown>;
+  moduleId?: string | null;
 }
 
 /** @internal — provided by the host's PluginSlot component */
@@ -42,6 +46,7 @@ export const PluginRuntimeContext = createContext<PluginRuntimeContextValue>({
   pluginId: "",
   slotId: "",
   slotContext: {},
+  moduleId: null,
 });
 
 /** Access the slot context data injected by the host. */
@@ -50,9 +55,9 @@ export function useSlotContext<T = Record<string, unknown>>(): T {
 }
 
 /** Read the current plugin's ID and slot ID. */
-export function usePluginInfo(): { id: string; slotId: string } {
+export function usePluginInfo(): { id: string; slotId: string; moduleId: string | null } {
   const ctx = useContext(PluginRuntimeContext);
-  return { id: ctx.pluginId, slotId: ctx.slotId };
+  return { id: ctx.pluginId, slotId: ctx.slotId, moduleId: ctx.moduleId ?? null };
 }
 
 // ─── Plugin settings ──────────────────────────────────────────────────────────
@@ -430,6 +435,74 @@ export function usePluginDeepLink(
   }, [handler]);
 
   return pending;
+}
+
+export function usePluginNavigation(): UsePluginNavigationReturn {
+  const { moduleId } = useContext(PluginRuntimeContext);
+  const [current, setCurrent] = useState<PluginRouteChange | null>(() => {
+    try {
+      return pluginNavigation().getCurrent(moduleId ?? null);
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    let api: ReturnType<typeof pluginNavigation>;
+    try {
+      api = pluginNavigation();
+    } catch (error) {
+      console.warn("[plugin-sdk] usePluginNavigation unavailable:", error);
+      return;
+    }
+
+    setCurrent(api.getCurrent(moduleId ?? null));
+    return api.onRouteChange((change) => {
+      if (moduleId && change.moduleId !== moduleId) {
+        return;
+      }
+      setCurrent(change);
+    });
+  }, [moduleId]);
+
+  const getCurrent = useCallback((targetModuleId?: string | null) => {
+    return pluginNavigation().getCurrent(targetModuleId ?? moduleId ?? null);
+  }, [moduleId]);
+
+  const pushRoute = useCallback((route: string, options?: PluginNavigationOptions) => {
+    const change = pluginNavigation().pushRoute(route, {
+      ...options,
+      moduleId: options?.moduleId ?? moduleId ?? null,
+    });
+    setCurrent(change);
+    return change;
+  }, [moduleId]);
+
+  const replaceRoute = useCallback((route: string, options?: PluginNavigationOptions) => {
+    const change = pluginNavigation().replaceRoute(route, {
+      ...options,
+      moduleId: options?.moduleId ?? moduleId ?? null,
+    });
+    setCurrent(change);
+    return change;
+  }, [moduleId]);
+
+  const onRouteChange = useCallback((handler: (change: PluginRouteChange) => void) => {
+    return pluginNavigation().onRouteChange((change) => {
+      if (moduleId && change.moduleId !== moduleId) {
+        return;
+      }
+      handler(change);
+    });
+  }, [moduleId]);
+
+  return {
+    current,
+    getCurrent,
+    pushRoute,
+    replaceRoute,
+    onRouteChange,
+  };
 }
 
 export function useHostModels<TModel = Record<string, unknown>>(): UseHostModelsReturn<TModel> {
