@@ -1,6 +1,6 @@
 {
   "name": "@haloforge/plugin-sdk",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "HaloForge Plugin SDK — build frontend components for HaloForge plugins",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,6 +18,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "prepare": "npm run build",
     "dev": "tsc -p tsconfig.build.json --watch"
   },
   "peerDependencies": {
