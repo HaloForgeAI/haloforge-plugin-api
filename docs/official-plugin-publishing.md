@@ -24,9 +24,19 @@ Official plugin lockfiles should be refreshed only after the required SDK, pack,
    - `npm run build` in `sdk/`
    - `npm run build` in `pack/`
 3. Commit the synced version changes.
-4. Make sure repository secrets are configured:
-   - `NPM_TOKEN`: npm automation token with publish access to `@haloforge/plugin-sdk` and `@haloforge/plugin-pack`.
+4. Configure npm Trusted Publisher for both npm packages:
+   - Package: `@haloforge/plugin-sdk`
+   - Package: `@haloforge/plugin-pack`
+   - Publisher: GitHub Actions
+   - Organization or user: `HaloForgeAI`
+   - Repository: `haloforge-plugin-api`
+   - Workflow filename: `publish-plugin-api.yml`
+   - Environment name: leave blank unless the workflow later adds a matching GitHub Actions `environment`.
+   - Allowed actions: select `npm publish`; staged publishing is not used by the release workflow.
+5. Make sure repository secrets are configured:
    - `CARGO_REGISTRY_TOKEN`: crates.io API token for `haloforge-plugin-api`.
+
+The npm packages intentionally do not use `NPM_TOKEN`. The release action publishes them through npm Trusted Publisher/OIDC, so the package settings on npmjs.com must trust `.github/workflows/publish-plugin-api.yml`.
 
 ## Tag-based release action
 
@@ -42,11 +52,11 @@ git push origin v0.2.13
 
 The workflow rejects tags that do not exactly match `versions.json` (`v${pluginApiVersion}`), runs Rust and npm verification, then publishes in this order:
 
-1. `haloforge-plugin-api` crate
-2. `@haloforge/plugin-sdk`
-3. `@haloforge/plugin-pack`
+1. `@haloforge/plugin-sdk`
+2. `@haloforge/plugin-pack`
+3. `haloforge-plugin-api` crate
 
-Before publishing, the workflow checks whether each artifact version already exists in npm/crates.io. Existing artifacts are skipped so rerunning after a partial release can continue with the missing packages. If anything still needs publishing, it checks that both publish tokens are present and runs `npm whoami` with `NPM_TOKEN` before publishing.
+Before publishing, the workflow checks whether each artifact version already exists in npm/crates.io. Existing artifacts are skipped so rerunning after a partial release can continue with the missing packages. npm authentication is handled by Trusted Publisher/OIDC; crates.io authentication is handled by `CARGO_REGISTRY_TOKEN`.
 
 Use the manual commands below only as a fallback if the release action is unavailable.
 
@@ -64,9 +74,19 @@ Publish the Rust crate from the repository root:
 cargo publish --manifest-path "G:\Git\haloforge-plugin-api\Cargo.toml"
 ```
 
-## npm authentication
+## npm trusted publishing
 
-Authenticate once:
+The normal npm release path is the tag-based GitHub Actions workflow. Configure Trusted Publisher on npmjs.com for each package with:
+
+```text
+Organization or user: HaloForgeAI
+Repository: haloforge-plugin-api
+Workflow filename: publish-plugin-api.yml
+Environment name: <blank>
+Allowed actions: npm publish
+```
+
+Manual npm authentication is only needed for fallback publishing from a local machine:
 
 ```powershell
 npm login
@@ -121,9 +141,9 @@ npm publish /Users/loyio/gitRepo/HaloForge/temp/npm-artifacts/haloforge-plugin-s
 
 When a HaloForge plugin depends on new SDK or pack behavior, publish in this order:
 
-1. `haloforge-plugin-api` crate
-2. `@haloforge/plugin-sdk`
-3. `@haloforge/plugin-pack`
+1. `@haloforge/plugin-sdk`
+2. `@haloforge/plugin-pack`
+3. `haloforge-plugin-api` crate
 4. the official plugin package itself
 5. catalog metadata submission / review / publish
 
@@ -149,10 +169,13 @@ Then complete the admin-side review and publish flow in HaloForge Cloud.
 
 ## Quick checklist
 
-- `cargo login` completed
-- `npm login` completed
+- npm Trusted Publisher configured for `@haloforge/plugin-sdk`
+- npm Trusted Publisher configured for `@haloforge/plugin-pack`
+- `CARGO_REGISTRY_TOKEN` repository secret configured
 - versions bumped
 - local build verification passed
+- release tag pushed
+- release action completed
 - crate published
 - `sdk` published
 - `pack` published

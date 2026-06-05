@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   publish:
-    name: Publish crate and npm packages
+    name: Publish npm packages and crate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,6 +26,12 @@ jobs:
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
+
+      - name: Use npm with trusted publishing support
+        run: |
+          npm install -g npm@^11.5.1
+          node --version
+          npm --version
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -40,15 +46,11 @@ jobs:
         id: published
         run: node scripts/check-release-availability.mjs
 
-      - name: Verify publish credentials
-        if: steps.published.outputs.crate_published != 'true' || steps.published.outputs.sdk_published != 'true' || steps.published.outputs.pack_published != 'true'
-        run: |
-          test -n "$CARGO_REGISTRY_TOKEN"
-          test -n "$NODE_AUTH_TOKEN"
-          npm whoami
+      - name: Verify cargo publish credentials
+        if: steps.published.outputs.crate_published != 'true'
+        run: test -n "$CARGO_REGISTRY_TOKEN"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Test Rust crate
         run: cargo test
@@ -67,6 +69,16 @@ jobs:
           npm test
           npm pack --dry-run
 
+      - name: Publish SDK to npm
+        if: steps.published.outputs.sdk_published != 'true'
+        working-directory: sdk
+        run: npm publish --access public
+
+      - name: Publish pack CLI to npm
+        if: steps.published.outputs.pack_published != 'true'
+        working-directory: pack
+        run: npm publish --access public
+
       - name: Publish Rust crate
         if: steps.published.outputs.crate_published != 'true'
         run: |
@@ -74,17 +86,3 @@ jobs:
           cargo publish --manifest-path Cargo.toml
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      - name: Publish SDK to npm
-        if: steps.published.outputs.sdk_published != 'true'
-        working-directory: sdk
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish pack CLI to npm
-        if: steps.published.outputs.pack_published != 'true'
-        working-directory: pack
-        run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
