@@ -70,7 +70,7 @@ Permission names are strict. For AI Chat access, the only valid manifest permiss
     "author": "You",
     "homepage": "https://github.com/you/hello-plugin",
     "compatibility": {
-        "min_app_version": "0.1.0",
+        "min_app_version": "0.8.0",
         "min_host_api_version": "0.1.0"
     },
     "capability_levels": [2],
@@ -194,11 +194,33 @@ For host-owned file pickers and AI transport helpers, the SDK also exports:
 - `pickHostDirectory()`
 - `saveHostFile()`
 - `usePluginDeepLink()` / `onPluginDeepLink()`
+- `pluginWindows()` / `usePluginWindows()`
 - `useHostAI().createSession(...)`
 - `useHostAI().getStreamState(...)`
 - `log()` and `createPluginLogger()`
 
 Frontend plugin logs written through `createPluginLogger()` are routed into HaloForge's app log file at `~/.haloforge/logs/haloforge.log.YYYY-MM-DD`.
+
+For multi-window plugins, use `usePluginNavigation()` for current-window page history and `usePluginWindows()` when asking HaloForge to open a route or resource in the best host window:
+
+```tsx
+import { usePluginWindows } from "@haloforge/plugin-sdk";
+
+const windows = usePluginWindows();
+
+await windows.openPluginRoute("/detail/42", {
+  params: { id: "42" },
+  reuseKey: "route",
+  openMode: "reuse_or_new",
+});
+
+await windows.openResource("/Users/me/project/README.md", {
+  route: "/document",
+  preferredRole: "document",
+});
+```
+
+The host combines these requests with the manifest `window` policy. Plugins declare intent; HaloForge owns window creation, reuse, focus, and restore behavior.
 
 ### 6. Validate and package the plugin
 

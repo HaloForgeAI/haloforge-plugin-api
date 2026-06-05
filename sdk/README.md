@@ -41,6 +41,8 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `invokePlugin`: call commands exposed by your Rust backend.
 - `useHostNavigation`, `useHostFileIntent`, `useHostModels`, `useHostAI`: stable host integration hooks for black-box-compatible plugins.
 - `pluginDeepLinks`, `onPluginDeepLink`, `usePluginDeepLink`: receive plugin-scoped `haloforge://` launch URLs such as import links.
+- `pluginNavigation`, `usePluginNavigation`: synchronize Level 0 plugin pages with HaloForge Back/Forward.
+- `pluginWindows`, `usePluginWindows`: ask HaloForge to open plugin routes/resources through the host multi-window dispatcher.
 - `pickHostFile`, `pickHostDirectory`, `saveHostFile`: stable host file dialog helpers.
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
 - `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
@@ -55,6 +57,8 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `useHostNavigation()` for module switches and settings tabs
 - `useHostFileIntent()` for startup/external file-open intents
 - `pluginDeepLinks()` / `usePluginDeepLink()` for plugin-scoped `haloforge://` launch URLs
+- `pluginNavigation()` / `usePluginNavigation()` for current-window plugin route history
+- `pluginWindows()` / `usePluginWindows()` for host-managed route/resource window opening
 - `pickHostFile()` / `pickHostDirectory()` / `saveHostFile()` for host-owned file dialogs
 - `useHostModels()` / `useAvailableModels()` for model lists and current selection
 - `useHostAI()` for AI transport, session creation, stream-state polling, and generation stop
@@ -105,6 +109,35 @@ export function SwitchboardPanel() {
 ```
 
 Plugins that do not call these helpers simply ignore deep links routed to them.
+
+## Plugin Routes And Windows
+
+Use `pluginNavigation()` when the plugin changes the page inside the current window. Use `pluginWindows()` when the plugin wants HaloForge to choose the right host window for a plugin route or resource.
+
+```tsx
+import { usePluginNavigation, usePluginWindows } from "@haloforge/plugin-sdk";
+
+export function DocumentsPanel() {
+  const navigation = usePluginNavigation();
+  const windows = usePluginWindows();
+
+  function openDetail(id: string) {
+    navigation.pushRoute(`/detail/${id}`, { params: { id } });
+  }
+
+  async function openDocument(path: string) {
+    await windows.openResource(path, {
+      route: "/document",
+      params: { path },
+      preferredRole: "document",
+      reuseKey: "resource",
+      openMode: "reuse_or_new",
+    });
+  }
+}
+```
+
+The host combines `pluginWindows()` requests with the manifest `window` policy. Plugins declare intent; HaloForge owns window creation, focus, reuse, restore, and conflict handling.
 
 ## Managed Image Gateway
 

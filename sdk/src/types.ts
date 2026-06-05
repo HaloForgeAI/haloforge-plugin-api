@@ -66,6 +66,33 @@ export interface PluginNavigationOptions {
   params?: Record<string, string> | null;
 }
 
+export type PluginWindowOpenMode =
+  | "smart"
+  | "current"
+  | "new_window"
+  | "reuse_existing"
+  | "reuse_or_new";
+
+export type PluginWindowReuseKey = "plugin" | "route" | "resource" | "none";
+
+export interface PluginWindowOpenOptions extends PluginNavigationOptions {
+  openMode?: PluginWindowOpenMode | null;
+  reuseKey?: PluginWindowReuseKey | null;
+  preferredRole?: string | null;
+  allowMultiple?: boolean | null;
+  resource?: string | null;
+}
+
+export interface PluginResourceOpenOptions extends Omit<PluginWindowOpenOptions, "resource"> {
+  resource: string;
+}
+
+export interface PluginWindowOpenResult {
+  label: string;
+  role: string;
+  module: string;
+}
+
 export interface PluginRouteChange {
   moduleId: string;
   pluginId: string;
@@ -83,6 +110,17 @@ export interface PluginNavigationApi {
 
 export interface UsePluginNavigationReturn extends PluginNavigationApi {
   current: PluginRouteChange | null;
+}
+
+export interface PluginWindowApi {
+  openPluginRoute: (
+    route: string,
+    options?: PluginWindowOpenOptions,
+  ) => Promise<PluginWindowOpenResult>;
+  openResource: (
+    resource: string,
+    options?: Omit<PluginResourceOpenOptions, "resource"> & { route?: string | null },
+  ) => Promise<PluginWindowOpenResult>;
 }
 
 export interface HostFileIntent {

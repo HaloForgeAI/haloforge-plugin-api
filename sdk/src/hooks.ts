@@ -8,7 +8,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { _getPluginId, invokeHost, pluginDeepLinks, pluginNavigation } from "./ipc";
+import { _getPluginId, invokeHost, pluginDeepLinks, pluginNavigation, pluginWindows } from "./ipc";
 import type {
   AppTheme,
   HostAIRequest,
@@ -23,6 +23,7 @@ import type {
   PluginLogOptions,
   PluginNavigationOptions,
   PluginRouteChange,
+  PluginWindowApi,
   UseAppThemeReturn,
   UseHostAIReturn,
   UseHostDataReturn,
@@ -503,6 +504,10 @@ export function usePluginNavigation(): UsePluginNavigationReturn {
     replaceRoute,
     onRouteChange,
   };
+}
+
+export function usePluginWindows(): PluginWindowApi {
+  return pluginWindows();
 }
 
 export function useHostModels<TModel = Record<string, unknown>>(): UseHostModelsReturn<TModel> {

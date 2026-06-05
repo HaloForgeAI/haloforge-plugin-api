@@ -23,7 +23,7 @@ Plugins can now declare:
 ```json
 {
   "compatibility": {
-    "min_app_version": "0.1.0",
+    "min_app_version": "0.8.0",
     "min_host_api_version": "0.1.0"
   },
   "host_capabilities": [
@@ -116,6 +116,7 @@ import {
   useHostAI,
   usePluginDeepLink,
   usePluginNavigation,
+  usePluginWindows,
   useHostTheme,
   enterpriseGateway,
   createPluginLogger,
@@ -125,6 +126,7 @@ import {
 function ExamplePanel() {
   const { openSettingsTab } = useHostNavigation();
   const navigation = usePluginNavigation();
+  const windows = usePluginWindows();
   const { intent, consume } = useHostFileIntent();
   usePluginDeepLink((link) => console.log("Received deep link", link.route, link.params));
   const { models, selectedModelId, sendMessage, createSession, getStreamState } = useHostAI();
@@ -152,6 +154,7 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `enterpriseGateway()`
 - `pluginDeepLinks()` / `onPluginDeepLink()` / `usePluginDeepLink()`
 - `pluginNavigation()` / `usePluginNavigation()`
+- `pluginWindows()` / `usePluginWindows()`
 - `useHostTheme()`
 - `useHostEvent()`
 - `pickHostFile()`
@@ -184,6 +187,38 @@ function Panel() {
 ```
 
 Use `pushRoute()` for user-visible page changes and `replaceRoute()` for state refinements such as filters. Existing plugins that do not call this API still work, but HaloForge can only restore the plugin module, not its internal page.
+
+### Plugin windows and resources
+
+Use `pluginNavigation()` when the plugin is changing the page inside the current window. Use `pluginWindows()` when the plugin wants HaloForge to open a plugin route or resource in the best host window.
+
+```tsx
+import { usePluginWindows } from "@haloforge/plugin-sdk";
+
+function DocumentsPanel() {
+  const windows = usePluginWindows();
+
+  async function openDocument(path: string) {
+    await windows.openResource(path, {
+      route: "/document",
+      params: { path },
+      preferredRole: "document",
+      reuseKey: "resource",
+      openMode: "reuse_or_new",
+    });
+  }
+
+  async function openDetail(id: string) {
+    await windows.openPluginRoute(`/detail/${id}`, {
+      params: { id },
+      reuseKey: "route",
+      openMode: "reuse_or_new",
+    });
+  }
+}
+```
+
+The host combines these options with the manifest `window` block. Explicit SDK options can refine the request, but the host still owns final window creation, focus, session restore, and safety checks.
 
 ### Plugin deep links
 

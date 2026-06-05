@@ -60,7 +60,7 @@ my-plugin/
   "description": "Short user-facing summary.",
   "author": "Example",
   "compatibility": {
-    "min_app_version": "0.1.0",
+    "min_app_version": "0.8.0",
     "min_host_api_version": "0.2.10"
   },
   "capability_levels": [0],
@@ -208,10 +208,38 @@ export default registerPlugin("dev.example.my-plugin", definePlugin({
 - `useHostAI()` 复用 AIChat transport。
 - `enterpriseGateway()` 调用宿主管理的生图网关。函数名为历史兼容命名，产品 UI 应显示为 “HaloForge Cloud gateway” 或 “managed image gateway”。
 - Level 0 插件面板如果有内部页面，使用 `usePluginNavigation()`。页面级跳转调用 `pushRoute()`，筛选/模式等状态修正用 `replaceRoute()`，并从 `current` 或 `onRouteChange()` 回写本地状态，这样 HaloForge 的后退/前进才能恢复插件内部页面。
+- 插件希望 HaloForge 按 manifest 的 `window` 策略把自己的 route 或 resource 打开到合适窗口时，使用 `usePluginWindows()`。
 - `AppSelect` 用于 combo box 和下拉框。
 - `pickHostFile()`、`pickHostDirectory()`、`saveHostFile()` 用于宿主文件选择器。
 
 SDK 已有控件时，不要使用原生 HTML select 自己做。
+
+`usePluginNavigation()` 和 `usePluginWindows()` 的边界不同：
+
+```tsx
+import { usePluginNavigation, usePluginWindows } from "@haloforge/plugin-sdk";
+
+function Panel() {
+  const navigation = usePluginNavigation();
+  const windows = usePluginWindows();
+
+  function openLocalDetail(id: string) {
+    navigation.pushRoute(`/detail/${id}`, { params: { id } });
+  }
+
+  async function openDocument(path: string) {
+    await windows.openResource(path, {
+      route: "/document",
+      params: { path },
+      preferredRole: "document",
+      reuseKey: "resource",
+      openMode: "reuse_or_new",
+    });
+  }
+}
+```
+
+当前窗口内的历史变化用 navigation。需要把 route/resource 交给宿主多窗口分发器时用 windows。插件不要调用私有 Tauri command 自己创建窗口。
 
 ## UX 与样式规则
 

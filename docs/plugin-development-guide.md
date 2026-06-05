@@ -60,7 +60,7 @@ Every plugin needs a `manifest.json` at the repository root.
   "description": "Short user-facing summary.",
   "author": "Example",
   "compatibility": {
-    "min_app_version": "0.1.0",
+    "min_app_version": "0.8.0",
     "min_host_api_version": "0.2.10"
   },
   "capability_levels": [0],
@@ -208,10 +208,38 @@ Use the SDK for host integration:
 - `useHostAI()` for host AI chat transport.
 - `enterpriseGateway()` for the host-managed image gateway. The function name is retained for compatibility, but product UI should call this "HaloForge Cloud gateway" or "managed image gateway".
 - `usePluginNavigation()` for Level 0 plugin panels with internal pages. Call `pushRoute()` on page-level navigation and update local state from `current` or `onRouteChange()` so HaloForge Back/Forward can restore the plugin page.
+- `usePluginWindows()` when a plugin wants HaloForge to open one of its routes or resources in the best host window according to the manifest `window` policy.
 - `AppSelect` for combo boxes and dropdowns.
 - `pickHostFile()`, `pickHostDirectory()`, and `saveHostFile()` for host-owned file dialogs.
 
 Do not build controls with raw HTML selects if the SDK has an equivalent host control.
+
+`usePluginNavigation()` and `usePluginWindows()` solve different problems:
+
+```tsx
+import { usePluginNavigation, usePluginWindows } from "@haloforge/plugin-sdk";
+
+function Panel() {
+  const navigation = usePluginNavigation();
+  const windows = usePluginWindows();
+
+  function openLocalDetail(id: string) {
+    navigation.pushRoute(`/detail/${id}`, { params: { id } });
+  }
+
+  async function openDocument(path: string) {
+    await windows.openResource(path, {
+      route: "/document",
+      params: { path },
+      preferredRole: "document",
+      reuseKey: "resource",
+      openMode: "reuse_or_new",
+    });
+  }
+}
+```
+
+Use navigation for current-window history. Use windows for route/resource handoff to the host multi-window dispatcher. Plugins should not call private Tauri commands to create windows.
 
 ## UX And Styling Rules
 

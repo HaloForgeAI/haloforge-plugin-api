@@ -9,7 +9,11 @@ import type {
   PluginGatewayImageRequest,
   PluginNavigationApi,
   PluginNavigationOptions,
+  PluginResourceOpenOptions,
   PluginRouteChange,
+  PluginWindowApi,
+  PluginWindowOpenOptions,
+  PluginWindowOpenResult,
 } from "./types";
 
 // ─── Plugin-scoped IPC ────────────────────────────────────────────────────────
@@ -99,6 +103,34 @@ interface HaloForgePluginHostBridge {
       handler: (request: PluginRouteChange) => void,
     ) => () => void;
   };
+  windows?: {
+    openPluginRoute: (
+      pluginId: string,
+      request: {
+        moduleId?: string | null;
+        route?: string | null;
+        params?: Record<string, string> | null;
+        openMode?: string | null;
+        reuseKey?: string | null;
+        preferredRole?: string | null;
+        allowMultiple?: boolean | null;
+        resource?: string | null;
+      },
+    ) => Promise<PluginWindowOpenResult>;
+    openResource: (
+      pluginId: string,
+      request: {
+        moduleId?: string | null;
+        route?: string | null;
+        params?: Record<string, string> | null;
+        openMode?: string | null;
+        reuseKey?: string | null;
+        preferredRole?: string | null;
+        allowMultiple?: boolean | null;
+        resource: string;
+      },
+    ) => Promise<PluginWindowOpenResult>;
+  };
   enterpriseGateway?: {
     generateImages: (
       pluginId: string,
@@ -153,6 +185,14 @@ function requireNavigation() {
   return navigation;
 }
 
+function requireWindows() {
+  const windows = getPluginHostBridge()?.windows;
+  if (!windows) {
+    throw new Error("[plugin-sdk] pluginWindows: host window bridge is unavailable.");
+  }
+  return windows;
+}
+
 /**
  * Subscribe to `haloforge://plugin/<plugin-id>/...` launch URLs routed to this plugin.
  *
@@ -205,6 +245,47 @@ export function pluginNavigation(): PluginNavigationApi {
     pushRoute: (route, options) => navigation.pushRoute(pluginId, toRequest(route, options)),
     replaceRoute: (route, options) => navigation.replaceRoute(pluginId, toRequest(route, options)),
     onRouteChange: (handler) => navigation.onRouteChange(pluginId, handler),
+  };
+}
+
+/**
+ * Ask HaloForge to open this plugin's route or resource using the host's
+ * multi-window dispatcher. The host combines the request with the plugin
+ * manifest's `window` policy and decides whether to focus, reuse, or create a
+ * window.
+ */
+export function pluginWindows(): PluginWindowApi {
+  const pluginId = requireCurrentPluginId("pluginWindows");
+  const windows = requireWindows();
+
+  const toRouteRequest = (route: string, options?: PluginWindowOpenOptions) => ({
+    moduleId: options?.moduleId ?? null,
+    route,
+    params: options?.params ?? null,
+    openMode: options?.openMode ?? null,
+    reuseKey: options?.reuseKey ?? null,
+    preferredRole: options?.preferredRole ?? null,
+    allowMultiple: options?.allowMultiple ?? null,
+    resource: options?.resource ?? null,
+  });
+
+  const toResourceRequest = (
+    resource: string,
+    options?: Omit<PluginResourceOpenOptions, "resource"> & { route?: string | null },
+  ) => ({
+    moduleId: options?.moduleId ?? null,
+    route: options?.route ?? null,
+    params: options?.params ?? null,
+    openMode: options?.openMode ?? null,
+    reuseKey: options?.reuseKey ?? "resource",
+    preferredRole: options?.preferredRole ?? null,
+    allowMultiple: options?.allowMultiple ?? null,
+    resource,
+  });
+
+  return {
+    openPluginRoute: (route, options) => windows.openPluginRoute(pluginId, toRouteRequest(route, options)),
+    openResource: (resource, options) => windows.openResource(pluginId, toResourceRequest(resource, options)),
   };
 }
 
