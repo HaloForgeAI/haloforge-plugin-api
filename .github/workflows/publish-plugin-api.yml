@@ -36,6 +36,15 @@ jobs:
       - name: Ensure generated versions are committed
         run: git diff --exit-code
 
+      - name: Verify publish credentials
+        run: |
+          test -n "$CARGO_REGISTRY_TOKEN"
+          test -n "$NODE_AUTH_TOKEN"
+          npm whoami
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Test Rust crate
         run: cargo test
 

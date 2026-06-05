@@ -46,6 +46,8 @@ The workflow rejects tags that do not exactly match `versions.json` (`v${pluginA
 2. `@haloforge/plugin-sdk`
 3. `@haloforge/plugin-pack`
 
+Before publishing, the workflow checks that both publish tokens are present and runs `npm whoami` with `NPM_TOKEN`. If that preflight fails, nothing is published.
+
 Use the manual commands below only as a fallback if the release action is unavailable.
 
 ## crates.io
