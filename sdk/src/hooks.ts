@@ -8,7 +8,7 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { _getPluginId, invokeHost, pluginDeepLinks, pluginNavigation, pluginWindows } from "./ipc";
+import { _getPluginId, invokeHost, pluginCurrentWindow, pluginDeepLinks, pluginNavigation, pluginWindows } from "./ipc";
 import type {
   AppTheme,
   HostAIRequest,
@@ -18,12 +18,14 @@ import type {
   HostNavigationApi,
   NotifyOptions,
   PluginDeepLink,
+  PluginCurrentWindowApi,
   PluginLogger,
   PluginLogLevel,
   PluginLogOptions,
   PluginNavigationOptions,
   PluginRouteChange,
   PluginWindowApi,
+  PluginWindowTitleOptions,
   UseAppThemeReturn,
   UseHostAIReturn,
   UseHostDataReturn,
@@ -508,6 +510,43 @@ export function usePluginNavigation(): UsePluginNavigationReturn {
 
 export function usePluginWindows(): PluginWindowApi {
   return pluginWindows();
+}
+
+export function usePluginCurrentWindow(): PluginCurrentWindowApi {
+  return pluginCurrentWindow();
+}
+
+export function usePluginWindowTitle(
+  title: string | null | undefined,
+  options: PluginWindowTitleOptions = {},
+): void {
+  const { moduleId } = useContext(PluginRuntimeContext);
+  const targetModuleId = options.moduleId ?? moduleId ?? null;
+  const subtitle = options.subtitle ?? null;
+
+  useEffect(() => {
+    let api: ReturnType<typeof pluginCurrentWindow>;
+    try {
+      api = pluginCurrentWindow();
+    } catch (error) {
+      console.warn("[plugin-sdk] usePluginWindowTitle unavailable:", error);
+      return;
+    }
+
+    const normalizedTitle = title?.trim();
+    if (normalizedTitle) {
+      void api.setTitle(normalizedTitle, {
+        moduleId: targetModuleId,
+        subtitle,
+      });
+    } else {
+      void api.resetTitle({ moduleId: targetModuleId });
+    }
+
+    return () => {
+      void api.resetTitle({ moduleId: targetModuleId });
+    };
+  }, [targetModuleId, subtitle, title]);
 }
 
 export function useHostModels<TModel = Record<string, unknown>>(): UseHostModelsReturn<TModel> {

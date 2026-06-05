@@ -5,6 +5,7 @@ import type {
   GatewayOutputAssetList,
   PluginDeepLink,
   PluginDeepLinkApi,
+  PluginCurrentWindowApi,
   PluginGatewayImageEditRequest,
   PluginGatewayImageRequest,
   PluginNavigationApi,
@@ -112,7 +113,6 @@ interface HaloForgePluginHostBridge {
         params?: Record<string, string> | null;
         openMode?: string | null;
         reuseKey?: string | null;
-        preferredRole?: string | null;
         allowMultiple?: boolean | null;
         resource?: string | null;
       },
@@ -125,11 +125,26 @@ interface HaloForgePluginHostBridge {
         params?: Record<string, string> | null;
         openMode?: string | null;
         reuseKey?: string | null;
-        preferredRole?: string | null;
         allowMultiple?: boolean | null;
         resource: string;
       },
     ) => Promise<PluginWindowOpenResult>;
+  };
+  currentWindow?: {
+    setTitle: (
+      pluginId: string,
+      request: {
+        moduleId?: string | null;
+        title?: string | null;
+        subtitle?: string | null;
+      },
+    ) => Promise<void>;
+    resetTitle: (
+      pluginId: string,
+      request?: {
+        moduleId?: string | null;
+      },
+    ) => Promise<void>;
   };
   enterpriseGateway?: {
     generateImages: (
@@ -191,6 +206,14 @@ function requireWindows() {
     throw new Error("[plugin-sdk] pluginWindows: host window bridge is unavailable.");
   }
   return windows;
+}
+
+function requireCurrentWindow() {
+  const currentWindow = getPluginHostBridge()?.currentWindow;
+  if (!currentWindow) {
+    throw new Error("[plugin-sdk] pluginCurrentWindow: host current-window bridge is unavailable.");
+  }
+  return currentWindow;
 }
 
 /**
@@ -264,7 +287,6 @@ export function pluginWindows(): PluginWindowApi {
     params: options?.params ?? null,
     openMode: options?.openMode ?? null,
     reuseKey: options?.reuseKey ?? null,
-    preferredRole: options?.preferredRole ?? null,
     allowMultiple: options?.allowMultiple ?? null,
     resource: options?.resource ?? null,
   });
@@ -278,7 +300,6 @@ export function pluginWindows(): PluginWindowApi {
     params: options?.params ?? null,
     openMode: options?.openMode ?? null,
     reuseKey: options?.reuseKey ?? "resource",
-    preferredRole: options?.preferredRole ?? null,
     allowMultiple: options?.allowMultiple ?? null,
     resource,
   });
@@ -286,6 +307,29 @@ export function pluginWindows(): PluginWindowApi {
   return {
     openPluginRoute: (route, options) => windows.openPluginRoute(pluginId, toRouteRequest(route, options)),
     openResource: (resource, options) => windows.openResource(pluginId, toResourceRequest(resource, options)),
+  };
+}
+
+/**
+ * Update the native title of the current HaloForge window.
+ *
+ * The host only accepts title updates from the plugin that owns the currently
+ * active plugin module/route, so hidden plugin panels cannot overwrite the
+ * system taskbar preview title.
+ */
+export function pluginCurrentWindow(): PluginCurrentWindowApi {
+  const pluginId = requireCurrentPluginId("pluginCurrentWindow");
+  const currentWindow = requireCurrentWindow();
+
+  return {
+    setTitle: (title, options) => currentWindow.setTitle(pluginId, {
+      moduleId: options?.moduleId ?? null,
+      title,
+      subtitle: options?.subtitle ?? null,
+    }),
+    resetTitle: (options) => currentWindow.resetTitle(pluginId, {
+      moduleId: options?.moduleId ?? null,
+    }),
   };
 }
 

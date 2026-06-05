@@ -11,18 +11,42 @@ This repository ships three public artifacts:
 3. npm package: `@haloforge/plugin-pack`
 
 For official HaloForge plugins, publish these SDK/tooling packages first when the plugin release depends on new APIs or packaging behavior.
+Official plugin lockfiles should be refreshed only after the required SDK, pack, and crate versions are published to npm/crates.io; do not commit lockfiles that point at local tarballs or workspace paths.
 
 ## Before you publish
 
-1. Bump versions intentionally:
-   - root `Cargo.toml`
-   - `sdk/package.json`
-   - `pack/package.json`
+1. Update `versions.json`.
+   - Keep `pluginApiVersion` as the single release version for the Rust crate, both npm packages, public host API version, docs, and templates.
+   - Run `node scripts/sync-versions.mjs` from the repository root.
+   - Do not hand-edit artifact versions in `Cargo.toml`, `sdk/package.json`, `pack/package.json`, or template dependency files unless the sync script is also updated.
 2. Build and verify locally:
    - `cargo test`
    - `npm run build` in `sdk/`
    - `npm run build` in `pack/`
-3. Make sure the npm scope and crates.io account are correct.
+3. Commit the synced version changes.
+4. Make sure repository secrets are configured:
+   - `NPM_TOKEN`: npm automation token with publish access to `@haloforge/plugin-sdk` and `@haloforge/plugin-pack`.
+   - `CARGO_REGISTRY_TOKEN`: crates.io API token for `haloforge-plugin-api`.
+
+## Tag-based release action
+
+The preferred publish flow is tag-driven. The GitHub Actions workflow publishes all three public artifacts when a `vX.Y.Z` tag is pushed.
+
+```powershell
+node scripts/sync-versions.mjs
+git diff --exit-code
+node scripts/verify-release-version.mjs v0.2.13
+git tag v0.2.13
+git push origin v0.2.13
+```
+
+The workflow rejects tags that do not exactly match `versions.json` (`v${pluginApiVersion}`), runs Rust and npm verification, then publishes in this order:
+
+1. `haloforge-plugin-api` crate
+2. `@haloforge/plugin-sdk`
+3. `@haloforge/plugin-pack`
+
+Use the manual commands below only as a fallback if the release action is unavailable.
 
 ## crates.io
 

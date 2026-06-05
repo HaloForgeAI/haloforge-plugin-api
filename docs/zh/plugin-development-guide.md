@@ -61,7 +61,7 @@ my-plugin/
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.10"
+    "min_host_api_version": "0.2.13"
   },
   "capability_levels": [0],
   "host_capabilities": ["navigation", "file_intents", "theme_read"],
@@ -76,7 +76,6 @@ my-plugin/
     }
   },
   "window": {
-    "preferred_role": "document",
     "default_open_mode": "reuse_or_new",
     "reuse_key": "resource",
     "allow_multiple": true,
@@ -124,7 +123,6 @@ my-plugin/
 
 插件如果希望自己的路由或资源进入 HaloForge 多窗口分发，可以在 manifest 里声明 `window` 配置。
 
-- `preferred_role`：新窗口偏好的宿主 role，例如 `main`、`document`、`agent`、`chat`、`devkit` 或 `settings`。
 - `default_open_mode`：`smart`、`current`、`new_window`、`reuse_existing` 或 `reuse_or_new`。
 - `reuse_key`：`plugin`、`route`、`resource` 或 `none`。
 - `allow_multiple`：是否允许同一插件同时存在多个窗口。
@@ -231,7 +229,6 @@ function Panel() {
     await windows.openResource(path, {
       route: "/document",
       params: { path },
-      preferredRole: "document",
       reuseKey: "resource",
       openMode: "reuse_or_new",
     });
@@ -240,6 +237,16 @@ function Panel() {
 ```
 
 当前窗口内的历史变化用 navigation。需要把 route/resource 交给宿主多窗口分发器时用 windows。插件不要调用私有 Tauri command 自己创建窗口。
+
+当插件页面代表某个具体文件、任务或记录时，可以更新当前原生窗口标题：
+
+```tsx
+import { usePluginWindowTitle } from "@haloforge/plugin-sdk";
+
+usePluginWindowTitle(fileName, { subtitle: "Markdown" });
+```
+
+HaloForge 只接受当前激活插件模块或 route 所属插件发出的标题更新，后台隐藏面板不能覆盖其他插件的标题。
 
 ## UX 与样式规则
 

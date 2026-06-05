@@ -83,7 +83,6 @@ test("hf-pack check accepts plugin window document handlers", async () => {
       ...BASE_MANIFEST,
       host_capabilities: ["navigation", "file_intents"],
       window: {
-        preferred_role: "document",
         default_open_mode: "reuse_or_new",
         reuse_key: "resource",
         allow_multiple: true,
