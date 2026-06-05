@@ -24,7 +24,7 @@ Plugins can now declare:
 {
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.1.0"
+    "min_host_api_version": "0.2.13"
   },
   "host_capabilities": [
     "navigation",
