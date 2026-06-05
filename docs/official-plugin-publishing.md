@@ -38,6 +38,7 @@ Official plugin lockfiles should be refreshed only after the required SDK, pack,
 
 The npm packages intentionally do not use `NPM_TOKEN`. The release action publishes them through npm Trusted Publisher/OIDC, so the package settings on npmjs.com must trust `.github/workflows/publish-plugin-api.yml`.
 The workflow pins Node.js to `22.14.0` and upgrades npm to `^11.5.1` because npm Trusted Publisher requires Node.js `22.14.0` or newer and npm CLI `11.5.1` or newer.
+Keep each npm package's `repository.url` pointed at `HaloForgeAI/haloforge-plugin-api`; npm validates that package metadata against the trusted GitHub repository during publish.
 
 ## Tag-based release action
 
@@ -97,6 +98,16 @@ npm whoami
 `npm adduser` is also acceptable if you prefer that flow.
 
 Note: if you copied older scratch notes, `pm login` is a typo; use `npm login`.
+
+If you prefer configuring Trusted Publisher from the CLI instead of npmjs.com, first log in with an npm account that can manage both packages, then run:
+
+```powershell
+npm install -g npm@^11.10.0
+npm trust github @haloforge/plugin-sdk --repo HaloForgeAI/haloforge-plugin-api --file publish-plugin-api.yml --allow-publish --yes
+npm trust github @haloforge/plugin-pack --repo HaloForgeAI/haloforge-plugin-api --file publish-plugin-api.yml --allow-publish --yes
+npm trust list @haloforge/plugin-sdk
+npm trust list @haloforge/plugin-pack
+```
 
 ## Publish `@haloforge/plugin-sdk`
 
