@@ -396,7 +396,7 @@ mod tests {
             "description": "Markdown plugin",
             "author": "HaloForge Team",
             "compatibility": {
-                "min_app_version": "0.7.0",
+                "min_app_version": "0.8.0",
                 "min_host_api_version": "0.2.13",
                 "platforms": ["windows", "macos", "linux"]
             },
