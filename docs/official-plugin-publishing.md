@@ -37,6 +37,7 @@ Official plugin lockfiles should be refreshed only after the required SDK, pack,
    - `CARGO_REGISTRY_TOKEN`: crates.io API token for `haloforge-plugin-api`.
 
 The npm packages intentionally do not use `NPM_TOKEN`. The release action publishes them through npm Trusted Publisher/OIDC, so the package settings on npmjs.com must trust `.github/workflows/publish-plugin-api.yml`.
+The workflow pins Node.js to `22.14.0` and upgrades npm to `^11.5.1` because npm Trusted Publisher requires Node.js `22.14.0` or newer and npm CLI `11.5.1` or newer.
 
 ## Tag-based release action
 
