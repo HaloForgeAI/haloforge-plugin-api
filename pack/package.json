@@ -1,12 +1,15 @@
 {
   "name": "@haloforge/plugin-pack",
-  "version": "0.2.11",
+  "version": "0.2.13",
   "description": "HaloForge plugin packager CLI — validate, build, and bundle plugins into .hfpkg archives",
   "type": "module",
   "bin": {
     "hf-pack": "dist/cli.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
@@ -26,7 +29,13 @@
   "publishConfig": {
     "access": "public"
   },
-  "keywords": ["haloforge", "plugin", "pack", "cli", "hfpkg"],
+  "keywords": [
+    "haloforge",
+    "plugin",
+    "pack",
+    "cli",
+    "hfpkg"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">=20"

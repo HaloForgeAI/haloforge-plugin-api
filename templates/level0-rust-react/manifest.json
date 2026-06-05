@@ -7,14 +7,27 @@
   "author": "Example",
   "homepage": "https://docs.haloforge.link/plugins",
   "license": "MIT",
-  "keywords": ["haloforge", "plugin", "template"],
+  "keywords": [
+    "haloforge",
+    "plugin",
+    "template"
+  ],
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.10",
-    "platforms": ["windows", "macos", "linux"]
+    "min_host_api_version": "0.2.13",
+    "platforms": [
+      "windows",
+      "macos",
+      "linux"
+    ]
   },
-  "capability_levels": [0],
-  "host_capabilities": ["navigation", "theme_read"],
+  "capability_levels": [
+    0
+  ],
+  "host_capabilities": [
+    "navigation",
+    "theme_read"
+  ],
   "integration": {
     "level0": {
       "module_id": "template-plugin",
@@ -26,7 +39,6 @@
     }
   },
   "window": {
-    "preferred_role": "main",
     "default_open_mode": "reuse_or_new",
     "reuse_key": "route",
     "allow_multiple": true
@@ -42,8 +54,12 @@
     "frontend_styles": "app/dist/styles.css"
   },
   "permissions": [
-    { "type": "ipc_register" },
-    { "type": "host_theme_read" }
+    {
+      "type": "ipc_register"
+    },
+    {
+      "type": "host_theme_read"
+    }
   ],
   "commands": [
     {

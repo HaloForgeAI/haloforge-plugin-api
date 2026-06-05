@@ -39,7 +39,6 @@ export interface Manifest {
   capability_levels: number[];
   host_capabilities?: string[];
   window?: {
-    preferred_role?: string;
     default_open_mode?: string;
     reuse_key?: string;
     allow_multiple?: boolean;
@@ -52,7 +51,6 @@ export interface Manifest {
       resource_param?: string;
       open_mode?: string;
       reuse_key?: string;
-      preferred_role?: string;
       allow_multiple?: boolean;
     }>;
   };
@@ -413,7 +411,6 @@ function validateManifestWindowPolicy(rawWindow: unknown): void {
   }
 
   const windowPolicy = rawWindow as JsonObject;
-  validateOptionalString(windowPolicy.preferred_role, "manifest.window.preferred_role");
   validateOptionalWindowOpenMode(windowPolicy.default_open_mode, "manifest.window.default_open_mode");
   validateOptionalWindowReuseKey(windowPolicy.reuse_key, "manifest.window.reuse_key");
   validateOptionalBoolean(windowPolicy.allow_multiple, "manifest.window.allow_multiple");
@@ -443,7 +440,6 @@ function validateManifestDocumentHandler(rawHandler: unknown, index: number): vo
   validateOptionalString(handler.resource_param, `${base}.resource_param`);
   validateOptionalWindowOpenMode(handler.open_mode, `${base}.open_mode`);
   validateOptionalWindowReuseKey(handler.reuse_key, `${base}.reuse_key`);
-  validateOptionalString(handler.preferred_role, `${base}.preferred_role`);
   validateOptionalBoolean(handler.allow_multiple, `${base}.allow_multiple`);
 
   const extensions = validateOptionalStringArray(handler.extensions, `${base}.extensions`);

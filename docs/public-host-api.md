@@ -38,7 +38,6 @@ Plugins can now declare:
     "event_subscribe"
   ],
   "window": {
-    "preferred_role": "document",
     "default_open_mode": "reuse_or_new",
     "reuse_key": "resource",
     "allow_multiple": true,
@@ -74,7 +73,6 @@ These declarations are meant to describe which stable host features the plugin e
 
 The optional `window` block lets plugins describe how the host should open plugin routes and resources in a multi-window HaloForge session.
 
-- `preferred_role`: requested window role, for example `main`, `document`, `agent`, `chat`, `devkit`, or `settings`.
 - `default_open_mode`: `smart`, `current`, `new_window`, `reuse_existing`, or `reuse_or_new`.
 - `reuse_key`: `plugin`, `route`, `resource`, or `none`.
 - `allow_multiple`: whether more than one window can show this plugin.
@@ -155,6 +153,7 @@ export default registerPlugin("dev.haloforge.example", definePlugin({
 - `pluginDeepLinks()` / `onPluginDeepLink()` / `usePluginDeepLink()`
 - `pluginNavigation()` / `usePluginNavigation()`
 - `pluginWindows()` / `usePluginWindows()`
+- `pluginCurrentWindow()` / `usePluginCurrentWindow()` / `usePluginWindowTitle()`
 - `useHostTheme()`
 - `useHostEvent()`
 - `pickHostFile()`
@@ -202,7 +201,6 @@ function DocumentsPanel() {
     await windows.openResource(path, {
       route: "/document",
       params: { path },
-      preferredRole: "document",
       reuseKey: "resource",
       openMode: "reuse_or_new",
     });
@@ -219,6 +217,20 @@ function DocumentsPanel() {
 ```
 
 The host combines these options with the manifest `window` block. Explicit SDK options can refine the request, but the host still owns final window creation, focus, session restore, and safety checks.
+
+### Current Window Title
+
+Plugins can update the native title of the current HaloForge window. Desktop shells use this value for taskbar previews and hover tooltips.
+
+```tsx
+import { usePluginWindowTitle } from "@haloforge/plugin-sdk";
+
+function MarkdownPanel({ fileName }: { fileName: string | null }) {
+  usePluginWindowTitle(fileName, { subtitle: "Markdown" });
+}
+```
+
+The host only accepts title updates from the plugin that owns the active plugin module or route. Passing `null` or unmounting the hook resets the title to the host default.
 
 ### Plugin deep links
 

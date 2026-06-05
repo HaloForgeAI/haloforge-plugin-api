@@ -87,7 +87,6 @@ Permission names are strict. For AI Chat access, the only valid manifest permiss
         }
     },
     "window": {
-        "preferred_role": "document",
         "default_open_mode": "reuse_or_new",
         "reuse_key": "resource",
         "allow_multiple": true,
@@ -195,6 +194,7 @@ For host-owned file pickers and AI transport helpers, the SDK also exports:
 - `saveHostFile()`
 - `usePluginDeepLink()` / `onPluginDeepLink()`
 - `pluginWindows()` / `usePluginWindows()`
+- `pluginCurrentWindow()` / `usePluginWindowTitle()`
 - `useHostAI().createSession(...)`
 - `useHostAI().getStreamState(...)`
 - `log()` and `createPluginLogger()`
@@ -216,11 +216,18 @@ await windows.openPluginRoute("/detail/42", {
 
 await windows.openResource("/Users/me/project/README.md", {
   route: "/document",
-  preferredRole: "document",
 });
 ```
 
 The host combines these requests with the manifest `window` policy. Plugins declare intent; HaloForge owns window creation, reuse, focus, and restore behavior.
+
+Plugins can also update the current native window title, which is what desktop shells use for taskbar previews:
+
+```tsx
+import { usePluginWindowTitle } from "@haloforge/plugin-sdk";
+
+usePluginWindowTitle("README.md", { subtitle: "Markdown" });
+```
 
 ### 6. Validate and package the plugin
 

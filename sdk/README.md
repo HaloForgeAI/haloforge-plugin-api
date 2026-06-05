@@ -43,6 +43,7 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `pluginDeepLinks`, `onPluginDeepLink`, `usePluginDeepLink`: receive plugin-scoped `haloforge://` launch URLs such as import links.
 - `pluginNavigation`, `usePluginNavigation`: synchronize Level 0 plugin pages with HaloForge Back/Forward.
 - `pluginWindows`, `usePluginWindows`: ask HaloForge to open plugin routes/resources through the host multi-window dispatcher.
+- `pluginCurrentWindow`, `usePluginCurrentWindow`, `usePluginWindowTitle`: update or reset the native title for the active HaloForge window.
 - `pickHostFile`, `pickHostDirectory`, `saveHostFile`: stable host file dialog helpers.
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
 - `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
@@ -59,6 +60,7 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `pluginDeepLinks()` / `usePluginDeepLink()` for plugin-scoped `haloforge://` launch URLs
 - `pluginNavigation()` / `usePluginNavigation()` for current-window plugin route history
 - `pluginWindows()` / `usePluginWindows()` for host-managed route/resource window opening
+- `pluginCurrentWindow()` / `usePluginWindowTitle()` for the current native window title
 - `pickHostFile()` / `pickHostDirectory()` / `saveHostFile()` for host-owned file dialogs
 - `useHostModels()` / `useAvailableModels()` for model lists and current selection
 - `useHostAI()` for AI transport, session creation, stream-state polling, and generation stop
@@ -129,7 +131,6 @@ export function DocumentsPanel() {
     await windows.openResource(path, {
       route: "/document",
       params: { path },
-      preferredRole: "document",
       reuseKey: "resource",
       openMode: "reuse_or_new",
     });
@@ -138,6 +139,20 @@ export function DocumentsPanel() {
 ```
 
 The host combines `pluginWindows()` requests with the manifest `window` policy. Plugins declare intent; HaloForge owns window creation, focus, reuse, restore, and conflict handling.
+
+### Current Window Title
+
+Use `usePluginWindowTitle()` when the active plugin page represents a specific file, task, or record:
+
+```tsx
+import { usePluginWindowTitle } from "@haloforge/plugin-sdk";
+
+export function MarkdownPanel({ fileName }: { fileName: string | null }) {
+  usePluginWindowTitle(fileName, { subtitle: "Markdown" });
+}
+```
+
+The host formats the native title as `Title - Subtitle - HaloForge` and rejects updates from plugins that do not own the active plugin module or route.
 
 ## Managed Image Gateway
 

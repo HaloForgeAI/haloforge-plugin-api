@@ -61,7 +61,7 @@ Every plugin needs a `manifest.json` at the repository root.
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.10"
+    "min_host_api_version": "0.2.13"
   },
   "capability_levels": [0],
   "host_capabilities": ["navigation", "file_intents", "theme_read"],
@@ -76,7 +76,6 @@ Every plugin needs a `manifest.json` at the repository root.
     }
   },
   "window": {
-    "preferred_role": "document",
     "default_open_mode": "reuse_or_new",
     "reuse_key": "resource",
     "allow_multiple": true,
@@ -124,7 +123,6 @@ Rules:
 
 Plugins can declare a `window` block when their routes or resources should participate in HaloForge's multi-window dispatcher.
 
-- `preferred_role`: requested host role for new windows, such as `main`, `document`, `agent`, `chat`, `devkit`, or `settings`.
 - `default_open_mode`: `smart`, `current`, `new_window`, `reuse_existing`, or `reuse_or_new`.
 - `reuse_key`: `plugin`, `route`, `resource`, or `none`.
 - `allow_multiple`: whether the plugin can have multiple windows at once.
@@ -231,7 +229,6 @@ function Panel() {
     await windows.openResource(path, {
       route: "/document",
       params: { path },
-      preferredRole: "document",
       reuseKey: "resource",
       openMode: "reuse_or_new",
     });
@@ -240,6 +237,16 @@ function Panel() {
 ```
 
 Use navigation for current-window history. Use windows for route/resource handoff to the host multi-window dispatcher. Plugins should not call private Tauri commands to create windows.
+
+Plugins that show a specific document or task can update the native window title:
+
+```tsx
+import { usePluginWindowTitle } from "@haloforge/plugin-sdk";
+
+usePluginWindowTitle(fileName, { subtitle: "Markdown" });
+```
+
+HaloForge only accepts title updates from the plugin that owns the active plugin module or route, so background panels cannot overwrite another plugin's title.
 
 ## UX And Styling Rules
 

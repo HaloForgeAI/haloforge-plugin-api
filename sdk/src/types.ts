@@ -78,7 +78,6 @@ export type PluginWindowReuseKey = "plugin" | "route" | "resource" | "none";
 export interface PluginWindowOpenOptions extends PluginNavigationOptions {
   openMode?: PluginWindowOpenMode | null;
   reuseKey?: PluginWindowReuseKey | null;
-  preferredRole?: string | null;
   allowMultiple?: boolean | null;
   resource?: string | null;
 }
@@ -121,6 +120,16 @@ export interface PluginWindowApi {
     resource: string,
     options?: Omit<PluginResourceOpenOptions, "resource"> & { route?: string | null },
   ) => Promise<PluginWindowOpenResult>;
+}
+
+export interface PluginWindowTitleOptions {
+  moduleId?: string | null;
+  subtitle?: string | null;
+}
+
+export interface PluginCurrentWindowApi {
+  setTitle: (title: string, options?: PluginWindowTitleOptions) => Promise<void>;
+  resetTitle: (options?: Pick<PluginWindowTitleOptions, "moduleId">) => Promise<void>;
 }
 
 export interface HostFileIntent {

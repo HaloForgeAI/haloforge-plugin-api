@@ -38,6 +38,7 @@ export type { PluginDefinition, FeaturePluginOptions, ModulePluginOptions, Assis
 // IPC
 export {
   enterpriseGateway,
+  pluginCurrentWindow,
   pluginNavigation,
   pluginWindows,
   pluginDeepLinks,
@@ -67,6 +68,8 @@ export {
   useHostNavigation,
   usePluginNavigation,
   usePluginWindows,
+  usePluginCurrentWindow,
+  usePluginWindowTitle,
   usePluginDeepLink,
   useHostFileIntent,
   useHostModels,
@@ -96,6 +99,7 @@ export type {
   HostNavigationApi,
   PluginNavigationApi,
   PluginNavigationOptions,
+  PluginCurrentWindowApi,
   PluginResourceOpenOptions,
   PluginRouteChange,
   PluginWindowApi,
@@ -103,6 +107,7 @@ export type {
   PluginWindowOpenOptions,
   PluginWindowOpenResult,
   PluginWindowReuseKey,
+  PluginWindowTitleOptions,
   UsePluginNavigationReturn,
   PluginDeepLink,
   PluginDeepLinkApi,

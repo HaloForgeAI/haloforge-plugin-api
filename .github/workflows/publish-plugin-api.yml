@@ -1,0 +1,88 @@
+name: Publish Plugin API
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-plugin-api-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish npm packages and crate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.14.0"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Use npm with trusted publishing support
+        run: |
+          npm install -g npm@^11.5.1
+          node --version
+          npm --version
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Verify release tag
+        run: node scripts/sync-versions.mjs && node scripts/verify-release-version.mjs
+
+      - name: Ensure generated versions are committed
+        run: git diff --exit-code
+
+      - name: Check existing published versions
+        id: published
+        run: node scripts/check-release-availability.mjs
+
+      - name: Verify cargo publish credentials
+        if: steps.published.outputs.crate_published != 'true'
+        run: test -n "$CARGO_REGISTRY_TOKEN"
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Test Rust crate
+        run: cargo test
+
+      - name: Build SDK
+        working-directory: sdk
+        run: |
+          npm install --no-package-lock
+          npm run build
+          npm pack --dry-run
+
+      - name: Test pack CLI
+        working-directory: pack
+        run: |
+          npm ci
+          npm test
+          npm pack --dry-run
+
+      - name: Publish SDK to npm
+        if: steps.published.outputs.sdk_published != 'true'
+        working-directory: sdk
+        run: npm publish --access public
+
+      - name: Publish pack CLI to npm
+        if: steps.published.outputs.pack_published != 'true'
+        working-directory: pack
+        run: npm publish --access public
+
+      - name: Publish Rust crate
+        if: steps.published.outputs.crate_published != 'true'
+        run: |
+          cargo publish --dry-run --manifest-path Cargo.toml
+          cargo publish --manifest-path Cargo.toml
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

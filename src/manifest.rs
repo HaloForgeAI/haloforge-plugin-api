@@ -169,10 +169,6 @@ pub struct IntegrationConfig {
 /// opened when invoked from menus, deeplinks, file associations, or other plugins.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct WindowPolicyConfig {
-    /// Preferred host role for new windows: "main", "document", "agent", "chat",
-    /// "devkit", "settings", or a future host-recognized role.
-    #[serde(default)]
-    pub preferred_role: Option<String>,
     /// Default open behavior for plugin routes: "smart", "current", "new_window",
     /// "reuse_existing", or "reuse_or_new".
     #[serde(default)]
@@ -215,9 +211,6 @@ pub struct DocumentHandlerConfig {
     /// Handler-specific reuse key; falls back to the plugin window policy.
     #[serde(default)]
     pub reuse_key: Option<String>,
-    /// Handler-specific preferred role; falls back to the plugin window policy.
-    #[serde(default)]
-    pub preferred_role: Option<String>,
     /// Handler-specific multiple-window allowance; falls back to the plugin policy.
     #[serde(default)]
     pub allow_multiple: Option<bool>,
@@ -399,12 +392,12 @@ mod tests {
         let manifest: PluginManifest = serde_json::from_value(serde_json::json!({
             "id": "dev.haloforge.markdown",
             "name": "Markdown",
-            "version": "0.2.10",
+            "version": "0.2.13",
             "description": "Markdown plugin",
             "author": "HaloForge Team",
             "compatibility": {
                 "min_app_version": "0.7.0",
-                "min_host_api_version": "0.2.10",
+                "min_host_api_version": "0.2.13",
                 "platforms": ["windows", "macos", "linux"]
             },
             "capability_levels": [0],
@@ -418,7 +411,6 @@ mod tests {
                 }
             },
             "window": {
-                "preferred_role": "document",
                 "default_open_mode": "reuse_or_new",
                 "reuse_key": "resource",
                 "allow_multiple": true,
@@ -434,7 +426,6 @@ mod tests {
         }))
         .expect("manifest should deserialize");
 
-        assert_eq!(manifest.window.preferred_role.as_deref(), Some("document"));
         assert_eq!(manifest.window.default_open_mode.as_deref(), Some("reuse_or_new"));
         assert_eq!(manifest.window.reuse_key.as_deref(), Some("resource"));
         assert_eq!(manifest.window.allow_multiple, Some(true));

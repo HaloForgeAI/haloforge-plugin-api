@@ -1,6 +1,6 @@
 {
   "name": "@haloforge/plugin-sdk",
-  "version": "0.2.12",
+  "version": "0.2.13",
   "description": "HaloForge Plugin SDK — build frontend components for HaloForge plugins",
   "type": "module",
   "main": "./dist/index.js",
