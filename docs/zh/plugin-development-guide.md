@@ -61,7 +61,7 @@ my-plugin/
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.14"
+    "min_host_api_version": "0.2.15"
   },
   "capability_levels": [0],
   "host_capabilities": ["navigation", "file_intents", "theme_read"],
