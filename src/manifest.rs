@@ -397,7 +397,7 @@ mod tests {
             "author": "HaloForge Team",
             "compatibility": {
                 "min_app_version": "0.8.0",
-                "min_host_api_version": "0.2.13",
+                "min_host_api_version": "0.2.14",
                 "platforms": ["windows", "macos", "linux"]
             },
             "capability_levels": [0],

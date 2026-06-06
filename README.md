@@ -71,7 +71,7 @@ Permission names are strict. For AI Chat access, the only valid manifest permiss
     "homepage": "https://github.com/you/hello-plugin",
     "compatibility": {
         "min_app_version": "0.8.0",
-        "min_host_api_version": "0.2.13"
+        "min_host_api_version": "0.2.14"
     },
     "capability_levels": [2],
     "host_capabilities": [
@@ -121,7 +121,7 @@ Permission names are strict. For AI Chat access, the only valid manifest permiss
 }
 ```
 
-The `window.document_handlers` block is the supported plugin-owned "open with" capability. HaloForge still owns actual window creation, focus, restore, and source-specific menu behavior. Host API `0.2.13` does not expose arbitrary plugin injection into the File/Edit/View menu bar; add a documented manifest/SDK contribution before relying on plugin-provided menu items.
+The `window.document_handlers` block is the supported plugin-owned "open with" capability. HaloForge still owns actual window creation, focus, restore, and source-specific menu behavior. The current Host API does not expose arbitrary plugin injection into the File/Edit/View menu bar; add a documented manifest/SDK contribution before relying on plugin-provided menu items.
 
 ### 4. Implement the native backend
 

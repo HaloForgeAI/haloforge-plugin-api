@@ -24,7 +24,7 @@ Plugins can now declare:
 {
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.13"
+    "min_host_api_version": "0.2.14"
   },
   "host_capabilities": [
     "navigation",
@@ -82,7 +82,7 @@ This is declarative only. The host still owns actual window creation, focus, res
 
 `document_handlers` are the supported plugin-owned "open with" capability. Host menu actions can still be source-specific: File > Open Markdown is a current-window navigation action, while OS file activation and deep links may use the plugin's multi-window policy.
 
-The app menu bar is host-owned. Host API `0.2.13` does not expose arbitrary plugin menu injection; add a documented manifest/SDK contribution before relying on plugin-provided File/Edit/View menu items.
+The app menu bar is host-owned. The current Host API does not expose arbitrary plugin menu injection; add a documented manifest/SDK contribution before relying on plugin-provided File/Edit/View menu items.
 
 ## Rust crate
 
