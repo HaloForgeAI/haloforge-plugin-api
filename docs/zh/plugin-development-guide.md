@@ -130,6 +130,10 @@ my-plugin/
 
 真正的窗口创建、聚焦、session restore 和安全检查仍由宿主执行。插件只声明意图，HaloForge 决定最终落到哪个窗口。
 
+`document_handlers` 是当前支持的插件侧「打开方式」能力。宿主菜单动作仍然可以按来源选择更严格的目标窗口：例如 File > Open Markdown 是当前窗口导航动作，而操作系统文件激活和 deep link 可以使用插件的多窗口策略。
+
+应用菜单栏归宿主管理。Host API `0.2.13` 不暴露任意插件菜单注入；如果插件需要提供 File/Edit/View 菜单项，应先新增文档化的 manifest/SDK contribution，而不是依赖私有菜单实现。
+
 ## Rust 后端
 
 插件需要以下能力时应使用 Rust 后端：
