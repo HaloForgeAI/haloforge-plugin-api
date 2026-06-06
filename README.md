@@ -121,6 +121,8 @@ Permission names are strict. For AI Chat access, the only valid manifest permiss
 }
 ```
 
+The `window.document_handlers` block is the supported plugin-owned "open with" capability. HaloForge still owns actual window creation, focus, restore, and source-specific menu behavior. Host API `0.2.13` does not expose arbitrary plugin injection into the File/Edit/View menu bar; add a documented manifest/SDK contribution before relying on plugin-provided menu items.
+
 ### 4. Implement the native backend
 
 ```rust

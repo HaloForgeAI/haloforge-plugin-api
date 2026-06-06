@@ -80,6 +80,10 @@ The optional `window` block lets plugins describe how the host should open plugi
 
 This is declarative only. The host still owns actual window creation, focus, restore, and conflict handling.
 
+`document_handlers` are the supported plugin-owned "open with" capability. Host menu actions can still be source-specific: File > Open Markdown is a current-window navigation action, while OS file activation and deep links may use the plugin's multi-window policy.
+
+The app menu bar is host-owned. Host API `0.2.13` does not expose arbitrary plugin menu injection; add a documented manifest/SDK contribution before relying on plugin-provided File/Edit/View menu items.
+
 ## Rust crate
 
 The Rust crate now exports:

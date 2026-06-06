@@ -130,6 +130,10 @@ Plugins can declare a `window` block when their routes or resources should parti
 
 The host still owns actual window creation, focus, session restore, and safety checks. The plugin declares intent; HaloForge decides the final target window.
 
+`document_handlers` are the supported plugin-owned "open with" capability. Host menu actions can still be source-specific: File > Open Markdown is a current-window navigation action, while OS file activation and deep links may use the plugin's multi-window policy.
+
+The app menu bar is host-owned. Host API `0.2.13` does not expose arbitrary plugin menu injection; add a documented manifest/SDK contribution before relying on plugin-provided File/Edit/View menu items.
+
 ## Rust Backend
 
 Use a Rust backend whenever the plugin needs:
