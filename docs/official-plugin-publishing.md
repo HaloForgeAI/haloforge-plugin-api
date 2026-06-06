@@ -17,6 +17,7 @@ Official plugin lockfiles should be refreshed only after the required SDK, pack,
 
 1. Update `versions.json`.
    - Keep `pluginApiVersion` as the single release version for the Rust crate, both npm packages, public host API version, docs, and templates.
+   - Keep `minAppVersion` as the single minimum app version for docs, templates, and fixture manifests.
    - Run `node scripts/sync-versions.mjs` from the repository root.
    - Do not hand-edit artifact versions in `Cargo.toml`, `sdk/package.json`, `pack/package.json`, or template dependency files unless the sync script is also updated.
 2. Build and verify locally:
@@ -47,9 +48,9 @@ The preferred publish flow is tag-driven. The GitHub Actions workflow publishes 
 ```powershell
 node scripts/sync-versions.mjs
 git diff --exit-code
-node scripts/verify-release-version.mjs v0.2.13
-git tag v0.2.13
-git push origin v0.2.13
+node scripts/verify-release-version.mjs v<pluginApiVersion>
+git tag v<pluginApiVersion>
+git push origin v<pluginApiVersion>
 ```
 
 The workflow rejects tags that do not exactly match `versions.json` (`v${pluginApiVersion}`), runs Rust and npm verification, then publishes in this order:

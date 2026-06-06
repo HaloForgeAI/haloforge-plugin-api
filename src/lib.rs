@@ -14,7 +14,7 @@ pub use types::*;
 /// The stable ABI version of this plugin API.
 /// Increment MAJOR on any breaking change to the HaloForgePlugin trait or context traits.
 pub const PLUGIN_ABI_VERSION: u32 = 1;
-pub const PUBLIC_HOST_API_VERSION: &str = "0.2.13";
+pub const PUBLIC_HOST_API_VERSION: &str = "0.2.14";
 
 // ─── The core plugin trait ────────────────────────────────────────────────────
 

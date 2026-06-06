@@ -61,7 +61,7 @@ my-plugin/
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.13"
+    "min_host_api_version": "0.2.14"
   },
   "capability_levels": [0],
   "host_capabilities": ["navigation", "file_intents", "theme_read"],
@@ -132,7 +132,7 @@ my-plugin/
 
 `document_handlers` 是当前支持的插件侧「打开方式」能力。宿主菜单动作仍然可以按来源选择更严格的目标窗口：例如 File > Open Markdown 是当前窗口导航动作，而操作系统文件激活和 deep link 可以使用插件的多窗口策略。
 
-应用菜单栏归宿主管理。Host API `0.2.13` 不暴露任意插件菜单注入；如果插件需要提供 File/Edit/View 菜单项，应先新增文档化的 manifest/SDK contribution，而不是依赖私有菜单实现。
+应用菜单栏归宿主管理。当前 Host API 不暴露任意插件菜单注入；如果插件需要提供 File/Edit/View 菜单项，应先新增文档化的 manifest/SDK contribution，而不是依赖私有菜单实现。
 
 ## Rust 后端
 
