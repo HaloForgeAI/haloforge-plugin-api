@@ -20,7 +20,7 @@ hf-pack check <plugin-dir>
 hf-pack info <plugin-dir-or-.hfpkg>
 hf-pack pack <plugin-dir> [--out dist] [--release] [--no-backend] [--no-frontend] [--target <triple>]
 hf-pack metadata <path.hfpkg> [--artifact-url <url>] [--source official] [--signing-key-id <id>] [--signing-key-env HF_PLUGIN_SIGNING_PRIVATE_KEY] [--output <path>] [--pretty]
-hf-pack submit <catalog-draft.json> [--api-base-url https://admin.haloforge.link] [--token-env HF_ADMIN_TOKEN]
+hf-pack submit <catalog-draft.json> [--api-base-url https://admin.haloforge.dev] [--token-env HF_ADMIN_TOKEN]
 ```
 
 ## Supported Layout

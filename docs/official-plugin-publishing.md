@@ -175,7 +175,7 @@ npx --yes @haloforge/plugin-pack@<version> metadata dist/plugin-release/<plugin-
   --signing-key-id <signing-key-id> `
   --pretty `
   --output dist/plugin-release/catalog-draft.json
-npx --yes @haloforge/plugin-pack@<version> submit dist/plugin-release/catalog-draft.json --api-base-url https://admin.haloforge.link
+npx --yes @haloforge/plugin-pack@<version> submit dist/plugin-release/catalog-draft.json --api-base-url https://admin.haloforge.dev
 ```
 
 Then complete the admin-side review and publish flow in HaloForge Cloud.

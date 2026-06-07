@@ -6,7 +6,7 @@ This repository contains **both** the Rust crate and the JavaScript/TypeScript S
 
 - SDK repository: https://github.com/HaloForgeAI/haloforge-plugin-api
 - HaloForge homepage: https://github.com/HaloForgeAI
-- Hosted plugin docs: https://docs.haloforge.link/plugins
+- Hosted plugin docs: https://docs.haloforge.dev/plugins
 
 ## Packages
 
@@ -319,7 +319,7 @@ Additional docs:
 
 It rejects invalid permission names such as `host_a_i_chat_access` and points plugin authors to the canonical `host_aichat_access` name.
 - `hf-pack metadata <path.hfpkg>` emits catalog draft JSON and can sign it directly for official plugin publishing.
-- `hf-pack submit <catalog-draft.json>` uploads that draft to `admin.haloforge.link`.
+- `hf-pack submit <catalog-draft.json>` uploads that draft to `admin.haloforge.dev`.
 
 The CLI supports these plugin layouts:
 

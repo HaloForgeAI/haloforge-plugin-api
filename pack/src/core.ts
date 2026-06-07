@@ -286,7 +286,7 @@ export async function submitDraft(draftPath: string, options: SubmitOptions): Pr
     );
   }
 
-  const apiBaseUrl = options.apiBaseUrl ?? "https://admin.haloforge.link";
+  const apiBaseUrl = options.apiBaseUrl ?? "https://admin.haloforge.dev";
   const endpoint = `${apiBaseUrl.replace(/\/+$/, "")}/v1/admin/catalog/drafts`;
   const response = await fetch(endpoint, {
     method: "POST",
