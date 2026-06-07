@@ -2,7 +2,7 @@
 
 This guide is the canonical engineering standard for HaloForge plugins. It covers the plugin shape, Rust backend contract, React panel contract, host SDK usage, local test flow, release flow, and the UX rules official plugins must follow.
 
-For the hosted documentation site, use `https://docs.haloforge.link/plugins`.
+For the hosted documentation site, use `https://docs.haloforge.dev/plugins`.
 
 ## Design Goals
 

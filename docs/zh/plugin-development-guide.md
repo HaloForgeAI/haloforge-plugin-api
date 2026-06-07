@@ -2,7 +2,7 @@
 
 这是 HaloForge 插件的标准开发规范，覆盖插件形态、Rust 后端契约、React 面板契约、Host SDK 使用、本地测试、发布流程，以及官方插件必须遵守的 UX 规则。
 
-在线文档入口使用 `https://docs.haloforge.link/plugins`。
+在线文档入口使用 `https://docs.haloforge.dev/plugins`。
 
 ## 设计目标
 
