@@ -216,7 +216,7 @@ await windows.openPluginRoute("/detail/42", {
   openMode: "reuse_or_new",
 });
 
-await windows.openResource("/Users/me/project/README.md", {
+await windows.openResource("<project-root>/README.md", {
   route: "/document",
 });
 ```
