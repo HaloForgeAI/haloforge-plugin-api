@@ -137,17 +137,17 @@ Pop-Location
 If you already built tarballs with `npm pack`, you can publish the artifacts directly:
 
 ```powershell
-npm publish /Users/loyio/gitRepo/HaloForge/temp/npm-artifacts/haloforge-plugin-pack-0.1.2.tgz --access public
-npm publish /Users/loyio/gitRepo/HaloForge/temp/npm-artifacts/haloforge-plugin-sdk-0.1.2.tgz --access public
+npm publish <repo-root>/temp/npm-artifacts/haloforge-plugin-pack-0.1.2.tgz --access public
+npm publish <repo-root>/temp/npm-artifacts/haloforge-plugin-sdk-0.1.2.tgz --access public
 
-npm publish /Users/loyio/gitRepo/HaloForge/temp/npm-artifacts/haloforge-plugin-pack-0.1.3.tgz --access public
+npm publish <repo-root>/temp/npm-artifacts/haloforge-plugin-pack-0.1.3.tgz --access public
 ```
 
 If npm prompts for 2FA:
 
 ```powershell
-npm publish /Users/loyio/gitRepo/HaloForge/temp/npm-artifacts/haloforge-plugin-pack-0.1.2.tgz --access public --otp 123456
-npm publish /Users/loyio/gitRepo/HaloForge/temp/npm-artifacts/haloforge-plugin-sdk-0.1.2.tgz --access public --otp 123456
+npm publish <repo-root>/temp/npm-artifacts/haloforge-plugin-pack-0.1.2.tgz --access public --otp 123456
+npm publish <repo-root>/temp/npm-artifacts/haloforge-plugin-sdk-0.1.2.tgz --access public --otp 123456
 ```
 
 ## Recommended release order
