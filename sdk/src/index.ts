@@ -56,6 +56,12 @@ export { AppSelect } from "./components/AppSelect";
 export type { AppSelectProps, AppSelectChangeEvent } from "./components/AppSelect";
 export { AppTooltip } from "./components/AppTooltip";
 export type { AppTooltipPlacement, AppTooltipProps } from "./components/AppTooltip";
+export { OperationResultDialog } from "./components/OperationResultDialog";
+export type {
+  OperationResultDialogProps,
+  OperationResultDialogState,
+  OperationResultTone,
+} from "./components/OperationResultDialog";
 
 // Hooks
 export {
