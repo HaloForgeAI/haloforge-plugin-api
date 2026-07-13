@@ -61,7 +61,7 @@ Every plugin needs a `manifest.json` at the repository root.
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.16"
+    "min_host_api_version": "0.2.17"
   },
   "capability_levels": [0],
   "host_capabilities": ["navigation", "file_intents", "theme_read"],

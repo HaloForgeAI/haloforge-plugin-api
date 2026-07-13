@@ -1,6 +1,6 @@
 [package]
 name = "haloforge-plugin-api"
-version = "0.2.16"
+version = "0.2.17"
 edition = "2021"
 description = "Plugin API for HaloForge — traits and types for building native HaloForge plugins"
 license = "MIT"
