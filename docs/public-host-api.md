@@ -24,13 +24,14 @@ Plugins can now declare:
 {
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.17"
+    "min_host_api_version": "0.2.18"
   },
   "host_capabilities": [
     "navigation",
     "app_state",
     "file_intents",
     "file_dialogs",
+    "file_watch",
     "aichat",
     "enterprise_gateway",
     "deep_links",
@@ -61,6 +62,7 @@ Plugins can now declare:
 - `app_state`
 - `file_intents`
 - `file_dialogs`
+- `file_watch`
 - `aichat`
 - `enterprise_gateway`
 - `deep_links`
@@ -97,6 +99,7 @@ The permission model also includes explicit host-facing permissions:
 - `host_app_state_read`
 - `host_file_intents`
 - `host_file_dialogs`
+- `host_file_watch`
 - `host_aichat_access`
 - `host_enterprise_gateway_access`
 - `host_deep_links`
@@ -115,6 +118,7 @@ import {
   definePlugin,
   useHostNavigation,
   useHostFileIntent,
+  useHostFileWatch,
   useHostAI,
   usePluginDeepLink,
   usePluginNavigation,

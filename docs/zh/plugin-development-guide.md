@@ -61,7 +61,7 @@ my-plugin/
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.17"
+    "min_host_api_version": "0.2.18"
   },
   "capability_levels": [0],
   "host_capabilities": ["navigation", "file_intents", "theme_read"],
@@ -115,6 +115,7 @@ my-plugin/
 - `id` 发布后必须保持稳定，不要改名。
 - `version` 使用 semver，官方插件初版从 `0.1.0` 开始。
 - `host_capabilities` 必须匹配前端实际使用的 SDK helper。
+- 文件监听必须使用 `watchHostFile` 或 `useHostFileWatch`，并声明 `file_watch` 与 `host_file_watch`；不要硬编码宿主命令或事件。
 - `permissions` 必须保持最小权限。
 - `entry.frontend` 和 `integration.*.panel_entry` 应指向构建后的 bundle。
 - `commands` 里的原生命令 ID 要和 Rust 后端注册的名字一致，不能包含 SDK 自动添加的前缀。

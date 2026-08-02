@@ -3,6 +3,8 @@ import type {
   EnterpriseGatewayApi,
   GatewayImageGenerationResult,
   GatewayOutputAssetList,
+  HostFileChangeEvent,
+  HostFileWatchApi,
   PluginDeepLink,
   PluginDeepLinkApi,
   PluginCurrentWindowApi,
@@ -15,6 +17,7 @@ import type {
   PluginWindowApi,
   PluginWindowOpenOptions,
   PluginWindowOpenResult,
+  StopHostFileWatch,
 } from "./types";
 
 // ─── Plugin-scoped IPC ────────────────────────────────────────────────────────
@@ -146,6 +149,13 @@ interface HaloForgePluginHostBridge {
       },
     ) => Promise<void>;
   };
+  files?: {
+    watch: (
+      pluginId: string,
+      path: string,
+      handler: (event: HostFileChangeEvent) => void,
+    ) => Promise<StopHostFileWatch>;
+  };
   enterpriseGateway?: {
     generateImages: (
       pluginId: string,
@@ -214,6 +224,14 @@ function requireCurrentWindow() {
     throw new Error("[plugin-sdk] pluginCurrentWindow: host current-window bridge is unavailable.");
   }
   return currentWindow;
+}
+
+function requireFiles() {
+  const files = getPluginHostBridge()?.files;
+  if (!files) {
+    throw new Error("[plugin-sdk] pluginFiles: host file watch bridge is unavailable.");
+  }
+  return files;
 }
 
 /**
@@ -331,6 +349,25 @@ export function pluginCurrentWindow(): PluginCurrentWindowApi {
       moduleId: options?.moduleId ?? null,
     }),
   };
+}
+
+/**
+ * Watch files through HaloForge's host-managed, cross-platform file service.
+ * Requires the `file_watch` host capability and `host_file_watch` permission.
+ */
+export function pluginFiles(): HostFileWatchApi {
+  const pluginId = requireCurrentPluginId("pluginFiles");
+  const files = requireFiles();
+  return {
+    watch: (path, handler) => files.watch(pluginId, path, handler),
+  };
+}
+
+export function watchHostFile(
+  path: string,
+  handler: (event: HostFileChangeEvent) => void,
+): Promise<StopHostFileWatch> {
+  return pluginFiles().watch(path, handler);
 }
 
 /**

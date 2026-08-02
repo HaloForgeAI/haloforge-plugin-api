@@ -71,13 +71,14 @@ Permission names are strict. For AI Chat access, the only valid manifest permiss
     "homepage": "https://github.com/you/hello-plugin",
     "compatibility": {
         "min_app_version": "0.8.0",
-        "min_host_api_version": "0.2.17"
+        "min_host_api_version": "0.2.18"
     },
     "capability_levels": [2],
     "host_capabilities": [
         "navigation",
         "file_intents",
         "file_dialogs",
+        "file_watch",
         "aichat",
         "theme_read"
     ],

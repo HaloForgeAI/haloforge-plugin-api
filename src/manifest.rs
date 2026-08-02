@@ -104,6 +104,7 @@ pub enum HostCapability {
     AppState,
     FileIntents,
     FileDialogs,
+    FileWatch,
     #[serde(rename = "aichat")]
     AiChat,
     EnterpriseGateway,
@@ -119,6 +120,7 @@ impl HostCapability {
             Self::AppState => "app_state",
             Self::FileIntents => "file_intents",
             Self::FileDialogs => "file_dialogs",
+            Self::FileWatch => "file_watch",
             Self::AiChat => "aichat",
             Self::EnterpriseGateway => "enterprise_gateway",
             Self::DeepLinks => "deep_links",
@@ -397,7 +399,7 @@ mod tests {
             "author": "HaloForge Team",
             "compatibility": {
                 "min_app_version": "0.8.0",
-                "min_host_api_version": "0.2.17",
+                "min_host_api_version": "0.2.18",
                 "platforms": ["windows", "macos", "linux"]
             },
             "capability_levels": [0],
@@ -444,6 +446,7 @@ mod tests {
     fn host_capability_names_are_stable() {
         assert_eq!(HostCapability::FileIntents.as_str(), "file_intents");
         assert_eq!(HostCapability::FileDialogs.as_str(), "file_dialogs");
+        assert_eq!(HostCapability::FileWatch.as_str(), "file_watch");
         assert_eq!(HostCapability::DeepLinks.as_str(), "deep_links");
         assert_eq!(HostCapability::ThemeRead.as_str(), "theme_read");
     }

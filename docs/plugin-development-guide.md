@@ -61,7 +61,7 @@ Every plugin needs a `manifest.json` at the repository root.
   "author": "Example",
   "compatibility": {
     "min_app_version": "0.8.0",
-    "min_host_api_version": "0.2.17"
+    "min_host_api_version": "0.2.18"
   },
   "capability_levels": [0],
   "host_capabilities": ["navigation", "file_intents", "theme_read"],
@@ -115,6 +115,7 @@ Rules:
 - `id` is stable forever. Do not rename it after publishing.
 - `version` follows semver. Official plugins should start at `0.1.0`.
 - `host_capabilities` must match SDK helpers used by the frontend.
+- File watching must use `watchHostFile` or `useHostFileWatch` with `file_watch` and `host_file_watch`; do not hard-code host commands or events.
 - `permissions` must be the smallest set needed.
 - `entry.frontend` and `integration.*.panel_entry` should point to the built bundle.
 - Native command IDs in `commands` must match the names registered by the Rust backend before SDK prefixing.

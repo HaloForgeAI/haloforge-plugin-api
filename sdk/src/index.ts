@@ -39,6 +39,7 @@ export type { PluginDefinition, FeaturePluginOptions, ModulePluginOptions, Assis
 export {
   enterpriseGateway,
   pluginCurrentWindow,
+  pluginFiles,
   pluginNavigation,
   pluginWindows,
   pluginDeepLinks,
@@ -48,6 +49,7 @@ export {
   invokePlugin,
   invokeOtherPlugin,
   invokeHost,
+  watchHostFile,
   _setPluginId,
 } from "./ipc";
 
@@ -78,6 +80,7 @@ export {
   usePluginWindowTitle,
   usePluginDeepLink,
   useHostFileIntent,
+  useHostFileWatch,
   useHostModels,
   useAvailableModels,
   useHostAI,
@@ -118,7 +121,12 @@ export type {
   PluginDeepLink,
   PluginDeepLinkApi,
   HostFileDialogOptions,
+  HostFileChangeEvent,
+  HostFileChangeKind,
   HostFileIntent,
+  HostFileWatchApi,
+  StopHostFileWatch,
+  UseHostFileWatchOptions,
   UseHostFileIntentReturn,
   UseHostModelsReturn,
   HostAIRequest,

@@ -522,6 +522,7 @@ const PERMISSION_SCHEMAS = new Map<string, { value: "none" | "string" | "string-
   ["host_app_state_read", { value: "none" }],
   ["host_file_intents", { value: "none" }],
   ["host_file_dialogs", { value: "none" }],
+  ["host_file_watch", { value: "none" }],
   [HOST_AICHAT_ACCESS_PERMISSION, { value: "none" }],
   ["host_enterprise_gateway_access", { value: "none" }],
   ["host_deep_links", { value: "none" }],
@@ -1454,6 +1455,7 @@ const HOST_CAPABILITIES = new Set([
   "app_state",
   "file_intents",
   "file_dialogs",
+  "file_watch",
   "aichat",
   "enterprise_gateway",
   "deep_links",
@@ -1491,6 +1493,8 @@ const DIRECT_HOST_IPC_COMMANDS = [
   "devkit_pick_file",
   "devkit_pick_directory",
   "devkit_save_file",
+  "plugin_watch_file",
+  "plugin_unwatch_file",
 ];
 
 const IGNORED_PLUGIN_SOURCE_DIRS = new Set([

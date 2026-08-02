@@ -163,6 +163,27 @@ export interface HostFileDialogOptions {
   defaultName?: string;
 }
 
+export type HostFileChangeKind = "create" | "modify" | "remove" | "other";
+
+export interface HostFileChangeEvent {
+  path: string;
+  kind: HostFileChangeKind;
+}
+
+export type StopHostFileWatch = () => Promise<void>;
+
+export interface HostFileWatchApi {
+  watch: (
+    path: string,
+    handler: (event: HostFileChangeEvent) => void,
+  ) => Promise<StopHostFileWatch>;
+}
+
+export interface UseHostFileWatchOptions {
+  enabled?: boolean;
+  onError?: (error: unknown) => void;
+}
+
 export interface UseHostFileIntentReturn {
   intent: HostFileIntent | null;
   setIntent: (intent: HostFileIntent | null) => void;

@@ -3,16 +3,18 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { _getPluginId, invokeHost, pluginCurrentWindow, pluginDeepLinks, pluginNavigation, pluginWindows } from "./ipc";
+import { _getPluginId, invokeHost, pluginCurrentWindow, pluginDeepLinks, pluginNavigation, pluginWindows, watchHostFile } from "./ipc";
 import type {
   AppTheme,
   HostAIRequest,
   HostDataResource,
+  HostFileChangeEvent,
   HostFileDialogOptions,
   HostFileIntent,
   HostNavigationApi,
@@ -30,6 +32,7 @@ import type {
   UseHostAIReturn,
   UseHostDataReturn,
   UseHostFileIntentReturn,
+  UseHostFileWatchOptions,
   UseHostModelsReturn,
   UsePluginNavigationReturn,
   UsePluginSettingsReturn,
@@ -769,6 +772,54 @@ export function useHostEvent(
   handler: (payload: unknown) => void,
 ): void {
   useAppEvent(event, handler);
+}
+
+export function useHostFileWatch(
+  path: string | null | undefined,
+  handler: (event: HostFileChangeEvent) => void,
+  options: UseHostFileWatchOptions = {},
+): void {
+  const handlerRef = useRef(handler);
+  const onErrorRef = useRef(options.onError);
+  const enabled = options.enabled ?? true;
+  handlerRef.current = handler;
+  onErrorRef.current = options.onError;
+
+  useEffect(() => {
+    if (!enabled || !path) {
+      return;
+    }
+
+    let disposed = false;
+    let stopWatching: (() => Promise<void>) | null = null;
+    const reportError = (error: unknown) => {
+      if (disposed) {
+        return;
+      }
+      if (onErrorRef.current) {
+        onErrorRef.current(error);
+      } else {
+        console.warn("[plugin-sdk] useHostFileWatch failed:", error);
+      }
+    };
+
+    void watchHostFile(path, (event) => handlerRef.current(event))
+      .then((stop) => {
+        if (disposed) {
+          void stop().catch(reportError);
+          return;
+        }
+        stopWatching = stop;
+      })
+      .catch(reportError);
+
+    return () => {
+      disposed = true;
+      if (stopWatching) {
+        void stopWatching().catch(reportError);
+      }
+    };
+  }, [enabled, path]);
 }
 
 export async function emitPluginEvent(event: string, payload: unknown): Promise<void> {

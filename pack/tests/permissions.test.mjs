@@ -77,6 +77,19 @@ test("hf-pack check accepts plugin deep link host capability and permission", as
   );
 });
 
+test("hf-pack check accepts host file watch capability and permission", async () => {
+  await withPluginDir(
+    {
+      ...BASE_MANIFEST,
+      host_capabilities: ["file_watch"],
+      permissions: [{ type: "host_file_watch" }],
+    },
+    async (pluginDir) => {
+      await assert.doesNotReject(() => checkPlugin(pluginDir));
+    },
+  );
+});
+
 test("hf-pack check accepts plugin window document handlers", async () => {
   await withPluginDir(
     {

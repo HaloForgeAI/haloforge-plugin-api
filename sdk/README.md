@@ -45,6 +45,7 @@ export default registerPlugin("com.example.hello-plugin", definePlugin({
 - `pluginWindows`, `usePluginWindows`: ask HaloForge to open plugin routes/resources through the host multi-window dispatcher.
 - `pluginCurrentWindow`, `usePluginCurrentWindow`, `usePluginWindowTitle`: update or reset the native title for the active HaloForge window.
 - `pickHostFile`, `pickHostDirectory`, `saveHostFile`: stable host file dialog helpers.
+- `watchHostFile`, `useHostFileWatch`: host-managed cross-platform file change notifications.
 - `usePluginSettings`, `useHostData`, `useSlotContext`: read plugin and host state inside your React components.
 - `useAppTheme`: read HaloForge theme mode and CSS variables inside your plugin.
 - `enterpriseGateway`: call the host-managed image gateway without exposing cloud tokens. The function name is retained for compatibility; user-facing UI should say "HaloForge Cloud gateway" or "Managed gateway".
@@ -62,6 +63,7 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `pluginWindows()` / `usePluginWindows()` for host-managed route/resource window opening
 - `pluginCurrentWindow()` / `usePluginWindowTitle()` for the current native window title
 - `pickHostFile()` / `pickHostDirectory()` / `saveHostFile()` for host-owned file dialogs
+- `watchHostFile()` / `useHostFileWatch()` for host-managed file change notifications
 - `useHostModels()` / `useAvailableModels()` for model lists and current selection
 - `useHostAI()` for AI transport, session creation, stream-state polling, and generation stop
 - `enterpriseGateway()` for host-managed image generation and image edits
@@ -70,6 +72,36 @@ Prefer these host helpers over reading `window.__HF_HOST` directly:
 - `log()` / `createPluginLogger()` for app-level plugin diagnostics
 
 These helpers currently adapt to HaloForge's existing host bridge internally, but they give plugin authors one documented surface that can keep working as HaloForge evolves.
+
+## File Watching
+
+Declare the public capability and permission:
+
+```json
+{
+  "host_capabilities": ["file_watch"],
+  "permissions": [
+    { "type": "host_file_watch" }
+  ]
+}
+```
+
+React plugins can follow a file without polling or using host internals:
+
+```tsx
+import { useCallback } from "react";
+import { useHostFileWatch } from "@haloforge/plugin-sdk";
+
+export function DocumentPanel({ path }: { path: string }) {
+  useHostFileWatch(path, useCallback((event) => {
+    console.log(event.path, event.kind);
+  }, []));
+
+  return null;
+}
+```
+
+Outside React, call `watchHostFile(path, handler)` and await the returned stop function.
 
 ## Plugin Deep Links
 

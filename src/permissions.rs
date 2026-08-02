@@ -60,6 +60,8 @@ pub enum Permission {
     HostFileIntents,
     /// Open stable host file and directory picker dialogs.
     HostFileDialogs,
+    /// Subscribe to host-managed file change notifications.
+    HostFileWatch,
     /// Reuse the host AIChat transport and model selection.
     #[serde(rename = "host_aichat_access")]
     HostAIChatAccess,
@@ -118,6 +120,7 @@ const PERMISSION_SCHEMAS: &[PermissionSchema] = &[
     PermissionSchema { type_name: "host_app_state_read", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_file_intents", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_file_dialogs", value_shape: PermissionValueShape::None },
+    PermissionSchema { type_name: "host_file_watch", value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: HOST_AICHAT_ACCESS_PERMISSION, value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: HOST_ENTERPRISE_GATEWAY_ACCESS_PERMISSION, value_shape: PermissionValueShape::None },
     PermissionSchema { type_name: "host_deep_links", value_shape: PermissionValueShape::None },
@@ -146,6 +149,7 @@ impl Permission {
             | Self::HostNavigation
             | Self::HostFileIntents
             | Self::HostFileDialogs
+            | Self::HostFileWatch
             | Self::HostAIChatAccess
             | Self::HostEnterpriseGatewayAccess
             | Self::HostDeepLinks
@@ -191,6 +195,7 @@ impl Permission {
             Self::HostAppStateRead          => "Read HaloForge UI state".into(),
             Self::HostFileIntents           => "Receive file-open intents from HaloForge".into(),
             Self::HostFileDialogs           => "Open HaloForge file and directory dialogs".into(),
+            Self::HostFileWatch             => "Watch files for changes through HaloForge".into(),
             Self::HostAIChatAccess          => "Use HaloForge AI models and chat transport".into(),
             Self::HostEnterpriseGatewayAccess => "Use HaloForge managed image gateway through the host session".into(),
             Self::HostDeepLinks             => "Receive HaloForge deep links routed to this plugin".into(),
@@ -285,6 +290,7 @@ mod tests {
         assert_eq!(Permission::HostThemeRead.tier(), PermissionTier::Transparent);
         assert_eq!(Permission::HostNavigation.tier(), PermissionTier::Standard);
         assert_eq!(Permission::HostFileDialogs.tier(), PermissionTier::Standard);
+        assert_eq!(Permission::HostFileWatch.tier(), PermissionTier::Standard);
         assert_eq!(Permission::HostAIChatAccess.tier(), PermissionTier::Standard);
         assert_eq!(
             Permission::HostEnterpriseGatewayAccess.tier(),
@@ -338,5 +344,13 @@ mod tests {
             "type": "host_deep_links"
         }))
         .expect("host deep links permission should be valid");
+    }
+
+    #[test]
+    fn validates_file_watch_host_permission() {
+        validate_manifest_permission_json(&json!({
+            "type": "host_file_watch"
+        }))
+        .expect("host file watch permission should be valid");
     }
 }
